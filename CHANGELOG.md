@@ -9,3 +9,9 @@ All notable changes to this project are documented here. The format follows
 ## [0.1.0]
 
 - First release.
+- `to_ascii_punct(text)` folds Unicode punctuation to ASCII: curly quotes to `'` and `"`,
+  en and em dashes and the minus sign to `-`, the ellipsis to `...`, non-breaking and
+  other spaces to a normal space, and bullets to `*`.
+- Letters, including accented ones, pass through untouched, unlike `unidecode` and
+  `anyascii`, which transliterate every character.
+- Zero runtime dependencies, with the mapping vendored in.
