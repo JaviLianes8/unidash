@@ -5,8 +5,8 @@ Fold Unicode dashes and punctuation to plain ASCII while leaving letters untouch
 Text pasted from word processors, PDFs, CJK input methods and web pages is full of
 characters that look like `-` but are not: en and em dashes, the minus sign, the
 non-breaking hyphen, fullwidth and small forms, and the invisible soft hyphen. They break
-search, diffs, command lines and parsers. `unidash` knows every one of them, by the Unicode
-data, and folds them the way you choose.
+search, diffs, command lines and parsers. `unidash` knows every character with the Unicode
+Dash property, plus the soft hyphen, and folds them the way you choose.
 
 ## Install
 
@@ -35,9 +35,9 @@ print(ascii(fold_dashes("a\ufe58b\uff0dc", "typographic")))
 # 'a\u2014b-c'
 ```
 
-A minus sign is always a single `-`, so negative numbers stay negative in every form, and
-characters that are already ASCII are never touched: `1-2` and a hand-written `--` come out
-as they went in.
+A minus sign is always a single `-` in the `ascii` and `tex` forms (`typographic` keeps
+U+2212), so negative numbers stay negative, and characters that are already ASCII are never
+touched: `1-2` and a hand-written `--` come out as they went in.
 
 ## Soft hyphens, non-breaking hyphens and script hyphens
 
@@ -66,7 +66,8 @@ print(ascii(fold_dashes("\u05e2\u05be\u05d1", script_hyphens=True)))
 
 `find_dashes` yields a `DashHit` (offset, line, column, character and Unicode name) for
 every character `fold_dashes` would change with the same options, which makes a lint or a
-pre-commit check a one-liner. `is_dash(char)` tells whether a character has the Unicode Dash
+pre-commit check a one-liner. Lines end at LF, CR or CRLF, columns count code points from 1,
+and a byte order mark at the start of the text takes no column. `is_dash(char)` tells whether a character has the Unicode Dash
 property and `DASHES` is that set. `dash_table(...)` returns the `str.translate` table, and
 `iter_fold_dashes(chunks, ...)` folds an iterable of strings lazily, for large inputs.
 
@@ -87,7 +88,9 @@ print("".join(iter_fold_dashes(["a\u2013", "b"])))
 
 `to_ascii_punct(text)` folds the rest of the typographic punctuation too: curly quotes become
 `'` and `"`, the ellipsis becomes `...`, non-breaking and other Unicode spaces become a normal
-space, bullets become `*`, and dashes follow the `ascii` form. Accented letters pass through.
+space, bullets become `*`, fullwidth punctuation from CJK input (U+FF01 to U+FF5E, letters and
+digits excepted) becomes its ASCII character, and dashes follow the `ascii` form. Accented
+letters pass through.
 
 ```python
 from unidash import to_ascii_punct
@@ -148,10 +151,16 @@ Script hyphens, folded only with `script_hyphens=True` (to `-`, or to U+2010 in
 SYLLABICS HYPHEN, U+1806 MONGOLIAN TODO SOFT HYPHEN, U+30A0 KATAKANA-HIRAGANA DOUBLE HYPHEN,
 U+10D6E GARAY HYPHEN and U+10EAD YEZIDI HYPHENATION MARK.
 
+The double hyphens (U+2E40, and U+1400 and U+30A0 among the script hyphens) become `-`
+although UTS #39 lists them as confusable with `=`: they are hyphens in use, and `=` would
+change the meaning of the text.
+
 Never folded: U+002D HYPHEN-MINUS, and U+207B SUPERSCRIPT MINUS and U+208B SUBSCRIPT MINUS,
 which sit next to superscript and subscript digits that stay as they are. Characters that
-only look like a hyphen (letters in other scripts, the Arabic full stop, the hyphen bullet,
-emoji) are not dashes and are left alone.
+only look like a hyphen are not dashes and are left alone: letters in other scripts, the Arabic
+full stop, the hyphen bullet, U+02D7 MODIFIER LETTER MINUS SIGN (a tone mark), and minus-like
+symbols without the Dash property such as U+2052 COMMERCIAL MINUS SIGN, U+2796 HEAVY MINUS
+SIGN (an emoji), U+2E43 DASH WITH LEFT UPTURN and U+10D8F GARAY MINUS SIGN.
 
 ## Why
 

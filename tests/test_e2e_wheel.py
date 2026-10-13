@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import tarfile
 import venv
 import zipfile
 from pathlib import Path
@@ -64,6 +65,13 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     names = zipfile.ZipFile(wheel).namelist()
     assert not [name for name in names if "vectors" in name or name.startswith("tests/")]
     assert "unidash/py.typed" in names
+
+    _run(sys.executable, "-m", "build", "--sdist", "--outdir", dist, ROOT)
+    (sdist,) = dist.glob("unidash-*.tar.gz")
+    with tarfile.open(sdist) as archive:
+        members = archive.getnames()
+    data = [name for name in members if "/tests/vectors/" in name]
+    assert data == [name for name in data if name.endswith("/MANIFEST.txt")]
 
     env_dir = tmp_path / "venv"
     venv.create(env_dir, with_pip=True)

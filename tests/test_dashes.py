@@ -51,6 +51,10 @@ def test_typographic_keeps_the_real_dashes() -> None:
     assert fold_dashes(kept, "typographic") == kept
 
 
+def test_typographic_keeps_the_minus_sign() -> None:
+    assert fold_dashes(MINUS + "5", "typographic") == MINUS + "5"
+
+
 def test_typographic_unifies_the_compatibility_forms() -> None:
     source = SMALL_EM + VERT_EM + VERT_EN + SMALL_HM + FULL_HM
     assert fold_dashes(source, "typographic") == EM + EM + EN + "--"

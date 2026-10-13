@@ -8,9 +8,11 @@ from pathlib import Path
 import pytest
 
 import unidash
+from unidash import Form, fold_dashes
 from unidash._classes import NAMES
 
 ROOT = Path(__file__).resolve().parents[1]
+FORMS: tuple[Form, ...] = ("ascii", "tex", "typographic")
 NOTES = "Draft\nDone " + chr(0x2014) + " ship it\nco" + chr(0xAD) + "op\n"
 
 
@@ -58,6 +60,23 @@ def test_the_classification_table_lists_every_known_character() -> None:
     for codepoint, name in NAMES.items():
         row = f"| U+{codepoint:04X} | {name} |"
         assert f"U+{codepoint:04X} {name}" in flat or row in flat, name
+
+
+def _cell(char: str, folded: str) -> str:
+    if folded == char:
+        return "kept"
+    if folded == "":
+        return "removed"
+    return f"`{folded}`" if folded.isascii() else f"U+{ord(folded):04X}"
+
+
+def test_every_table_cell_matches_the_fold() -> None:
+    rows = re.findall(r"^\| U\+([0-9A-F]{4,5}) \| [^|]+ \|(.+)\|$", _readme(), re.MULTILINE)
+    assert len(rows) == 22
+    for codepoint, cells in rows:
+        char = chr(int(codepoint, 16))
+        expected = [_cell(char, fold_dashes(char, form)) for form in FORMS]
+        assert [cell.strip() for cell in cells.split("|")] == expected, codepoint
 
 
 def test_every_public_name_appears_in_the_readme() -> None:

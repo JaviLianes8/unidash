@@ -28,6 +28,8 @@ All notable changes to this project are documented here. The format follows
 - `to_ascii_punct` now folds every general dash (fullwidth, small, vertical, two-em and
   three-em dashes, wave dashes to `~`) and removes soft hyphens.
 - Type errors name the type that was passed.
+- `to_ascii_punct` folds fullwidth punctuation (U+FF01 to U+FF5E, not letters or digits) to
+  ASCII, so the Japanese wave dash from CP932 text (U+FF5E) becomes `~`.
 
 ## [0.1.0]
 

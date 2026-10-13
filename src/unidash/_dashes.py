@@ -9,6 +9,8 @@ from typing import NamedTuple
 from ._classes import DASH_CODEPOINTS, NAMES
 from ._tables import Form, Table, cached_table, check_options
 
+BOM, CR, LF = chr(0xFEFF), chr(13), chr(10)
+
 DASHES: frozenset[str] = frozenset(chr(cp) for cp in DASH_CODEPOINTS)
 
 
@@ -64,8 +66,10 @@ def iter_fold_dashes(
 
 def is_dash(char: str) -> bool:
     """Return whether ``char`` has the Unicode Dash property (``-`` included)."""
-    if not isinstance(char, str) or len(char) != 1:
-        raise TypeError("char must be a str of length 1")
+    if not isinstance(char, str):
+        raise TypeError(f"char must be a str, not {type(char).__name__}")
+    if len(char) != 1:
+        raise ValueError(f"char must be a single character, not {len(char)}")
     return char in DASHES
 
 
@@ -78,12 +82,18 @@ def char_name(char: str) -> str:
 
 
 def scan(text: str, table: Table) -> Iterator[DashHit]:
-    line, line_start = 1, 0
-    for offset, char in enumerate(_require_text(text)):
-        if char == "\n":
+    # Lines end at LF, CR or CRLF, as editors count them; a leading BOM takes no column.
+    text = _require_text(text)
+    line, line_start = 1, 1 if text.startswith(BOM) else 0
+    previous = ""
+    for offset, char in enumerate(text):
+        if char == LF and previous == CR:
+            line_start = offset + 1
+        elif char in (CR, LF):
             line, line_start = line + 1, offset + 1
         elif ord(char) in table:
             yield DashHit(offset, line, offset - line_start + 1, char, char_name(char))
+        previous = char
 
 
 def find_dashes(

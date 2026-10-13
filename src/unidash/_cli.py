@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -49,15 +50,8 @@ def _read(name: str, stdin: BinaryIO) -> str:
     return data.decode("utf-8")
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """Run the tool and return its exit code: 0 clean, 1 changes found by --check, 2 error."""
-    parser = _parser()
-    args = parser.parse_args(argv)
-    table = _table(args, parser)
-    names = args.files or [_STDIN]
-    if names.count(_STDIN) > 1:
-        parser.error("stdin (-) can be read only once")
-    stdout, status = sys.stdout.buffer, 0
+def _run(args: argparse.Namespace, table: Table, names: list[str], stdout: BinaryIO) -> int:
+    status = 0
     for name in names:
         label = "<stdin>" if name == _STDIN else name
         try:
@@ -71,7 +65,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             continue
         for hit in scan(text, table):
             line = f"{label}:{hit.line}:{hit.column}: {hit.codepoint} {hit.name}\n"
-            stdout.write(line.encode("utf-8"))
+            # File names on POSIX may hold undecodable bytes; give them back as they were.
+            stdout.write(line.encode("utf-8", "surrogateescape"))
             status = max(status, 1)
     stdout.flush()
     return status
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run the tool and return its exit code: 0 clean, 1 changes found by --check, 2 error."""
+    parser = _parser()
+    args = parser.parse_args(argv)
+    table = _table(args, parser)
+    names = args.files or [_STDIN]
+    if names.count(_STDIN) > 1:
+        parser.error("stdin (-) can be read only once")
+    try:
+        return _run(args, table, names, sys.stdout.buffer)
+    except BrokenPipeError:
+        # The reader went away (``unidash big.txt | head``): stop quietly, like other filters.
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        try:
+            os.dup2(devnull, sys.stdout.fileno())
+        except (OSError, ValueError):
+            pass
+        finally:
+            os.close(devnull)
+        return 1

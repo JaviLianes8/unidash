@@ -135,3 +135,40 @@ def test_version_flag(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFix
         main(["--version"])
     assert raised.value.code == 0
     assert capsys.readouterr().out.strip() == f"unidash {unidash.__version__}"
+
+
+def test_a_bom_survives_filtering_and_takes_no_column(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = _file(tmp_path, "b.txt", chr(0xFEFF) + EM + "x")
+    run = Run(monkeypatch)
+    assert main([path]) == 0
+    assert run.out.getvalue() == b"\xef\xbb\xbf-x"
+    run = Run(monkeypatch)
+    assert main(["--check", path]) == 1
+    assert run.out.getvalue().decode().endswith(":1:1: U+2014 EM DASH\n")
+
+
+class _ClosedPipe(io.BytesIO):
+    def write(self, data: object) -> int:
+        raise BrokenPipeError
+
+
+def test_a_closed_pipe_stops_quietly(monkeypatch: pytest.MonkeyPatch) -> None:
+    Run(monkeypatch, EM.encode())
+    monkeypatch.setattr(sys, "stdout", io.TextIOWrapper(_ClosedPipe()))
+    assert main([]) == 1
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX file names are bytes")
+def test_undecodable_file_names_are_reported_as_given(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import os
+
+    raw = os.fsencode(str(tmp_path)) + b"/x\xff.md"
+    with open(raw, "wb") as handle:
+        handle.write(EM.encode())
+    run = Run(monkeypatch)
+    assert main(["--check", os.fsdecode(raw)]) == 1
+    assert run.out.getvalue() == raw + b":1:1: U+2014 EM DASH\n"

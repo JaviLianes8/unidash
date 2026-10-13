@@ -11,7 +11,7 @@ Progress:
 - [x] Mutation run (guards removed one at a time, each must fail the suite)
 - [x] Docs: README, CHANGELOG, docstrings, packaging metadata
 - [x] Gates: ruff format, ruff check, mypy --strict, pytest
-- [ ] Independent review findings fixed with regression tests
+- [x] Independent review findings fixed with regression tests
 - [ ] Pull request opened, guard clean
 
 ## Starting point
@@ -70,7 +70,7 @@ from word processors, PDFs, CJK input methods and web pages:
 3. **Soft and non-breaking hyphens.** The soft hyphen is dropped by default (it is a line
    break hint, not a character), `keep_soft_hyphens=True` keeps it. The non-breaking hyphen
    folds to `-` in the ASCII forms and stays in `typographic`, where it carries meaning.
-4. **Numbers and ranges preserved.** A minus sign is always a single `-`, in every form, so
+4. **Numbers and ranges preserved.** A minus sign is always a single `-` in the ASCII forms, so
    `-5` stays a negative number; the TeX form never touches characters that are already ASCII,
    so `1-2` and `--` written by hand come out unchanged.
 5. **`to_ascii_punct` follows suit.** It folds every general dash and drops soft hyphens, so

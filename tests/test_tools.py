@@ -55,6 +55,18 @@ def test_find_names_do_not_depend_on_the_interpreter_tables(
     assert (unknown.name, unknown.column) == ("U+0378", 2)
 
 
+def test_find_counts_lines_like_an_editor() -> None:
+    cr, lf = chr(13), chr(10)
+    text = "a" + cr + "b" + EM + cr + lf + EM + lf + lf + "x" + EM
+    assert [(h.line, h.column) for h in find_dashes(text)] == [(2, 2), (3, 1), (5, 2)]
+
+
+def test_a_leading_bom_takes_no_column() -> None:
+    bom = chr(0xFEFF)
+    assert [(h.line, h.column) for h in find_dashes(bom + EM + chr(10) + EM)] == [(1, 1), (2, 1)]
+    assert next(find_dashes("a" + bom + EM)).column == 3
+
+
 def test_find_ignores_plain_ascii_and_counts_code_points() -> None:
     assert list(find_dashes("a-b -- c")) == []
     (hit,) = find_dashes(chr(0x1F600) + EM)
@@ -73,10 +85,15 @@ def test_is_dash_follows_the_dash_property() -> None:
     assert not is_dash(SOFT) and not is_dash("a") and not is_dash(chr(0x2043))
 
 
-@pytest.mark.parametrize("bad", ["", "--", 45])
-def test_is_dash_needs_one_character(bad: object) -> None:
-    with pytest.raises(TypeError, match="length 1"):
-        is_dash(bad)  # type: ignore[arg-type]
+@pytest.mark.parametrize("bad", ["", "--"])
+def test_is_dash_needs_one_character(bad: str) -> None:
+    with pytest.raises(ValueError, match="single character"):
+        is_dash(bad)
+
+
+def test_is_dash_needs_a_str() -> None:
+    with pytest.raises(TypeError, match="not int"):
+        is_dash(45)  # type: ignore[arg-type]
 
 
 def test_dashes_is_a_frozenset_of_single_characters() -> None:

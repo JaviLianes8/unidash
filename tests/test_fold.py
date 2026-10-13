@@ -112,3 +112,19 @@ def test_script_hyphens_are_left_to_their_script() -> None:
 def test_error_names_the_wrong_type() -> None:
     with pytest.raises(TypeError, match="not int"):
         to_ascii_punct(123)  # type: ignore[arg-type]
+
+
+def test_fullwidth_punctuation_folds_to_its_nfkc_ascii_form() -> None:
+    import unicodedata
+
+    for codepoint in range(0xFF01, 0xFF5F):
+        char = chr(codepoint)
+        if char.isalnum():
+            assert to_ascii_punct(char) == char, hex(codepoint)
+        else:
+            assert to_ascii_punct(char) == unicodedata.normalize("NFKC", char), hex(codepoint)
+            assert to_ascii_punct(char).isascii()
+
+
+def test_japanese_wave_dash_from_cp932_becomes_tilde() -> None:
+    assert to_ascii_punct("1" + chr(0xFF5E) + "9") == "1~9"
