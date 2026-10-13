@@ -1,10 +1,24 @@
+"""The public surface: names, version and type information."""
+
+from __future__ import annotations
+
 import importlib.resources
 
 import unidash
 
 # The public API. Add every exported name here as the library grows; this list is the
 # contract and the test below fails if the module and this list disagree.
-PUBLIC_API: list[str] = ["to_ascii_punct"]
+PUBLIC_API: list[str] = [
+    "DASHES",
+    "DashHit",
+    "Form",
+    "dash_table",
+    "find_dashes",
+    "fold_dashes",
+    "is_dash",
+    "iter_fold_dashes",
+    "to_ascii_punct",
+]
 
 
 def test_all_lists_exactly_the_public_api() -> None:

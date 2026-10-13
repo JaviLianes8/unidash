@@ -1,3 +1,7 @@
+"""to_ascii_punct: quotes, dashes, spaces, bullets and the ellipsis."""
+
+from __future__ import annotations
+
 import pytest
 
 from unidash import to_ascii_punct
@@ -76,4 +80,35 @@ def test_empty_string_stays_empty() -> None:
 
 def test_non_string_input_is_rejected() -> None:
     with pytest.raises(TypeError):
+        to_ascii_punct(123)  # type: ignore[arg-type]
+
+
+def test_every_general_dash_folds_including_cjk_and_compatibility_forms() -> None:
+    source = chr(0xFF0D) + chr(0xFE58) + chr(0xFE63) + chr(0x2E3A) + chr(0xFE31)
+    assert to_ascii_punct(source) == "-----"
+
+
+def test_wave_dash_becomes_tilde() -> None:
+    assert to_ascii_punct("1" + chr(0x301C) + "9") == "1~9"
+
+
+def test_soft_hyphen_is_dropped() -> None:
+    assert to_ascii_punct("hy" + chr(0xAD) + "phen") == "hyphen"
+
+
+def test_non_breaking_hyphen_becomes_hyphen() -> None:
+    assert to_ascii_punct("e" + chr(0x2011) + "mail") == "e-mail"
+
+
+def test_hyphen_bullet_stays_a_bullet() -> None:
+    assert to_ascii_punct(chr(0x2043) + " item") == "* item"
+
+
+def test_script_hyphens_are_left_to_their_script() -> None:
+    hebrew = chr(0x5E2) + chr(0x5BE) + chr(0x5D1)
+    assert to_ascii_punct(hebrew) == hebrew
+
+
+def test_error_names_the_wrong_type() -> None:
+    with pytest.raises(TypeError, match="not int"):
         to_ascii_punct(123)  # type: ignore[arg-type]

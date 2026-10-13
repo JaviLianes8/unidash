@@ -2,10 +2,10 @@
 
 Progress:
 - [x] Brainstorm ranked improvements (this file)
-- [ ] Dash classification from the Unicode data: general dashes, script hyphens, kept marks
-- [ ] `fold_dashes` with the `ascii`, `tex` and `typographic` forms and soft hyphen control
-- [ ] `to_ascii_punct` covers every general dash and drops soft hyphens
-- [ ] `find_dashes`, `is_dash`, `DASHES`, `dash_table`, streaming `iter_fold_dashes`
+- [x] Dash classification from the Unicode data: general dashes, script hyphens, kept marks
+- [x] `fold_dashes` with the `ascii`, `tex` and `typographic` forms and soft hyphen control
+- [x] `to_ascii_punct` covers every general dash and drops soft hyphens
+- [x] `find_dashes`, `is_dash`, `DASHES`, `dash_table`, streaming `iter_fold_dashes`
 - [ ] Command line tool (`unidash`, `python -m unidash`) with `--check`
 - [ ] Contracts: UCD and UTS #39 data, interpreter scan, typing, README, wheel e2e
 - [ ] Mutation run (guards removed one at a time, each must fail the suite)
