@@ -7,10 +7,10 @@ Progress:
 - [x] `to_ascii_punct` covers every general dash and drops soft hyphens
 - [x] `find_dashes`, `is_dash`, `DASHES`, `dash_table`, streaming `iter_fold_dashes`
 - [x] Command line tool (`unidash`, `python -m unidash`) with `--check`
-- [ ] Contracts: UCD and UTS #39 data, interpreter scan, typing, README, wheel e2e
-- [ ] Mutation run (guards removed one at a time, each must fail the suite)
+- [x] Contracts: UCD and UTS #39 data, interpreter scan, typing, README, wheel e2e
+- [x] Mutation run (guards removed one at a time, each must fail the suite)
 - [x] Docs: README, CHANGELOG, docstrings, packaging metadata
-- [ ] Gates: ruff format, ruff check, mypy --strict, pytest
+- [x] Gates: ruff format, ruff check, mypy --strict, pytest
 - [ ] Independent review findings fixed with regression tests
 - [ ] Pull request opened, guard clean
 
@@ -95,3 +95,22 @@ Left out on purpose: turning ASCII hyphens into typographic dashes (the opposite
 `smartypants` owns it), context rules such as "en dash between digits" (guesswork that breaks
 code and identifiers), in-place file rewriting (shell redirection and editors already do this
 safely), and folding letters that look like hyphens (the library never touches letters).
+
+## Verification
+
+- Gates: `ruff format --check .`, `ruff check .`, `mypy --strict src` (also `src tests`) and
+  `pytest` exit 0 on Windows with Python 3.13 (118 passed, 1 skipped: the wheel e2e). On the
+  second machine with Python 3.14 and `UNIDASH_E2E=1` the full suite passes (119 passed): it
+  builds the wheel, checks that no data or tests ship in it, installs it in a fresh venv,
+  drives the API from an empty folder, and runs the installed `unidash` script and
+  `python -m unidash`.
+- Unicode data: the classes equal the Dash property of PropList.txt 18.0.0 exactly, cover all
+  27 Pd code points of UnicodeData.txt 18.0.0, and the stored names match it. Every UTS #39
+  confusable of `-` either folds to `-` or is a letter or one of five listed non-dashes. The
+  running interpreter's Pd set and NFKC mappings are checked on every run, data or not.
+- Mutations: 46 mutants (classes, tables, option checks, TeX widths, compatibility targets,
+  soft and script hyphen switches, table copying, position counting, name lookup, streaming
+  type checks, the punctuation table, and every command line flag, label, encoding and exit
+  code rule), applied one at a time with the bytecode cache disabled and purged before each
+  run: all killed. One first draft of an output-encoding mutant was equivalent and was
+  replaced. The baseline was green before and after.
