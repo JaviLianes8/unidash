@@ -99,18 +99,27 @@ safely), and folding letters that look like hyphens (the library never touches l
 ## Verification
 
 - Gates: `ruff format --check .`, `ruff check .`, `mypy --strict src` (also `src tests`) and
-  `pytest` exit 0 on Windows with Python 3.13 (118 passed, 1 skipped: the wheel e2e). On the
-  second machine with Python 3.14 and `UNIDASH_E2E=1` the full suite passes (119 passed): it
-  builds the wheel, checks that no data or tests ship in it, installs it in a fresh venv,
+  `pytest` exit 0 on Windows with Python 3.13 (126 passed, 2 skipped: the wheel e2e and the
+  POSIX file name test). On the second machine with Python 3.14 and `UNIDASH_E2E=1` the suite
+  passes (127 passed, 1 skipped: the POSIX test): it builds the wheel and the sdist, checks
+  that no third-party data or tests ship in them, installs the wheel in a fresh venv,
   drives the API from an empty folder, and runs the installed `unidash` script and
   `python -m unidash`.
 - Unicode data: the classes equal the Dash property of PropList.txt 18.0.0 exactly, cover all
   27 Pd code points of UnicodeData.txt 18.0.0, and the stored names match it. Every UTS #39
   confusable of `-` either folds to `-` or is a letter or one of five listed non-dashes. The
   running interpreter's Pd set and NFKC mappings are checked on every run, data or not.
-- Mutations: 46 mutants (classes, tables, option checks, TeX widths, compatibility targets,
+- Mutations: 53 mutants (classes, tables, option checks, TeX widths, compatibility targets,
   soft and script hyphen switches, table copying, position counting, name lookup, streaming
-  type checks, the punctuation table, and every command line flag, label, encoding and exit
-  code rule), applied one at a time with the bytecode cache disabled and purged before each
+  type checks, the punctuation and fullwidth tables, LF, CR and CRLF line counting, the byte
+  order mark column, the broken pipe exit, and every command line flag, label, encoding and
+  exit code rule), applied one at a time with the bytecode cache disabled and purged before each
   run: all killed. One first draft of an output-encoding mutant was equivalent and was
   replaced. The baseline was green before and after.
+- Independent review: 9 findings, all addressed with regression tests: lone CR now ends a
+  line for positions; a leading byte order mark takes no column; a closed output pipe stops
+  quietly; undecodable POSIX file names are printed as given; the typographic minus claim and
+  the scope of minus-like characters are stated exactly in the README, with the reason double
+  hyphens become `-`; `to_ascii_punct` folds fullwidth punctuation, including the CP932 wave
+  dash; every README table cell is checked against the fold; the sdist is checked for data
+  files; `is_dash` raises `ValueError` for a string of the wrong length.
