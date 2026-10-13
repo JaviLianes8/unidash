@@ -125,4 +125,4 @@ def test_flags_must_be_bools(option: str) -> None:
 
 def test_options_are_keyword_only() -> None:
     with pytest.raises(TypeError):
-        fold_dashes("a", "ascii", True)  # type: ignore[misc]
+        fold_dashes("a", "ascii", True)  # type: ignore[call-arg]

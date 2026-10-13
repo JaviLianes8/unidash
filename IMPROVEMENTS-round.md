@@ -6,10 +6,10 @@ Progress:
 - [x] `fold_dashes` with the `ascii`, `tex` and `typographic` forms and soft hyphen control
 - [x] `to_ascii_punct` covers every general dash and drops soft hyphens
 - [x] `find_dashes`, `is_dash`, `DASHES`, `dash_table`, streaming `iter_fold_dashes`
-- [ ] Command line tool (`unidash`, `python -m unidash`) with `--check`
+- [x] Command line tool (`unidash`, `python -m unidash`) with `--check`
 - [ ] Contracts: UCD and UTS #39 data, interpreter scan, typing, README, wheel e2e
 - [ ] Mutation run (guards removed one at a time, each must fail the suite)
-- [ ] Docs: README, CHANGELOG, docstrings, packaging metadata
+- [x] Docs: README, CHANGELOG, docstrings, packaging metadata
 - [ ] Gates: ruff format, ruff check, mypy --strict, pytest
 - [ ] Independent review findings fixed with regression tests
 - [ ] Pull request opened, guard clean

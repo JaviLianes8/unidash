@@ -11,6 +11,7 @@ import pytest
 from unidash import (
     DASHES,
     DashHit,
+    Form,
     dash_table,
     find_dashes,
     fold_dashes,
@@ -21,7 +22,7 @@ from unidash import (
 from unidash._classes import COMPATIBILITY, GENERAL, KEPT, SCRIPT_HYPHENS
 
 EM, EN, SOFT, MAQAF = chr(0x2014), chr(0x2013), chr(0xAD), chr(0x5BE)
-FORMS = ("ascii", "tex", "typographic")
+FORMS: tuple[Form, ...] = ("ascii", "tex", "typographic")
 
 
 def test_find_reports_line_column_and_name() -> None:
