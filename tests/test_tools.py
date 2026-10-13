@@ -8,6 +8,7 @@ import unicodedata
 
 import pytest
 
+import unidash._dashes
 from unidash import (
     DASHES,
     DashHit,
@@ -20,6 +21,7 @@ from unidash import (
     to_ascii_punct,
 )
 from unidash._classes import COMPATIBILITY, GENERAL, KEPT, SCRIPT_HYPHENS
+from unidash._dashes import scan
 
 EM, EN, SOFT, MAQAF = chr(0x2014), chr(0x2013), chr(0xAD), chr(0x5BE)
 FORMS: tuple[Form, ...] = ("ascii", "tex", "typographic")
@@ -38,10 +40,19 @@ def test_find_follows_the_fold_options() -> None:
     assert list(find_dashes(EM + EN, "typographic")) == []
 
 
-def test_find_names_new_characters_on_old_interpreters() -> None:
+def test_find_names_do_not_depend_on_the_interpreter_tables(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class NoNames:
+        @staticmethod
+        def name(char: str, default: str) -> str:
+            return default
+
+    monkeypatch.setattr(unidash._dashes, "unicodedata", NoNames)
     (hit,) = find_dashes(chr(0x10EAD), script_hyphens=True)
-    assert hit.name == "YEZIDI HYPHENATION MARK"
-    assert hit.codepoint == "U+10EAD"
+    assert (hit.name, hit.codepoint) == ("YEZIDI HYPHENATION MARK", "U+10EAD")
+    (unknown,) = scan("a" + chr(0x378), {0x378: "x"})
+    assert (unknown.name, unknown.column) == ("U+0378", 2)
 
 
 def test_find_ignores_plain_ascii_and_counts_code_points() -> None:
@@ -112,7 +123,7 @@ def test_streaming_is_lazy_but_checks_options_eagerly() -> None:
     assert next(stream) == "-"
     with pytest.raises(ValueError):
         iter_fold_dashes([], "nope")  # type: ignore[arg-type]
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="must be a str, not bytes"):
         list(iter_fold_dashes([b"a"]))  # type: ignore[list-item]
 
 

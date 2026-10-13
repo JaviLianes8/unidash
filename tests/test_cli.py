@@ -103,8 +103,10 @@ def test_missing_file_is_an_error_but_others_still_run(
 
 def test_errors_win_over_findings_in_check(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     dirty = _file(tmp_path, "a.txt", EM)
+    missing = str(tmp_path / "missing")
     Run(monkeypatch)
-    assert main(["--check", dirty, str(tmp_path / "missing")]) == 2
+    assert main(["--check", dirty, missing]) == 2
+    assert main(["--check", missing, dirty]) == 2
 
 
 def test_non_utf8_input_is_an_error(monkeypatch: pytest.MonkeyPatch) -> None:
