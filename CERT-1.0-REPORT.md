@@ -15,7 +15,9 @@ Progress:
 - [x] Packaging, e2e, every Python (items 8, 10, 13, 14)
 - [x] Gates (item 15)
 - [x] PR and trace guard
-- [ ] Five QA lenses (item 19)
+- [x] QA rounds 1 and 2: every finding fixed
+- [x] Second author mutation round on the fix code, final matrix and gates at d9dc54f
+- [ ] Five QA lenses passing on the final code (item 19)
 - [ ] Independent reviewer (item 16)
 
 ## Scorecard
@@ -31,15 +33,15 @@ Progress:
 | 7 | Real ground truth | PASS: Unicode 18.0 files fetched 2026-10-23, regex, four typography converters |
 | 8 | Real e2e from the wheel | PASS: wheel in a fresh venv, API and CLI by subprocess; no PyPI release to upgrade from |
 | 9 | Seeded fuzz, no crash, hang or blowup | PASS: `tests/test_fuzz.py`; linear on growing input since QA round 1 (`tests/test_scale.py`) |
-| 10 | Supported Pythons | PASS: CPython 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2, 3.14.2t |
+| 10 | Supported Pythons | PASS: CPython 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2, 3.14.2t, at d9dc54f |
 | 11 | README and `twine check` | PASS: `twine check --strict` on wheel and sdist, absolute links |
 | 12 | Dated CHANGELOG section | PASS: 1.0.0, 2026-10-23 |
 | 13 | pyproject 1.0.0, Production/Stable | PASS |
 | 14 | sdist and wheel contents | PASS |
-| 15 | Gates each exit 0 | PASS: see Gates |
+| 15 | Gates each exit 0 | PASS: at d9dc54f, see Gates |
 | 16 | Independent reviewer | pending (next stage) |
 | 17 | PR and trace guard | PR from `release/1.0.0`, trace guard CLEAN; merge and publish left to the maintainer |
-| 18 | Contracts bite (mutations) | PASS: author round of 37 mutants, all killed |
+| 18 | Contracts bite (mutations) | PASS: two author rounds, 37 and 15 mutants, all killed |
 | 19 | Five independent QA lenses | pending (next stage) |
 
 ## Baseline on 0.2.0 (before any change)
@@ -148,6 +150,28 @@ test that failed. M37 came with its test at 6101860 and was run alone on this PC
 | M36 | filter rewrites CRLF line ends | `test_cli.py::test_stdin_is_filtered_to_stdout_byte_exactly` |
 | M37 | `python -m unidash` guard removed | `test_cli.py::test_importing_the_main_module_does_not_run_the_tool` |
 
+Second round, on the code the QA fixes added: each mutant alone on `git archive d9dc54f` plus the
+fetched data, CPython 3.13.2 with the oracles and mypy, full suite with `-x`, on this PC; the
+unmutated tree passed first. All 15 killed.
+
+| Mutant | Change | First failing test |
+| --- | --- | --- |
+| M38 | diagnostics printed with no stderr | `test_cli_io.py::test_with_no_stderr_diagnostics_stay_out_of_the_output[check0]` |
+| M39 | usage error limit 100 times larger | `test_cli_io.py::test_a_huge_unknown_argument_is_cut_short[args0]` |
+| M40 | long usage error kept whole | `test_cli_io.py::test_a_huge_unknown_argument_is_cut_short[args0]` |
+| M41 | usage error printed with no stderr | `test_cli_io.py::test_with_no_stderr_a_usage_error_writes_nothing` |
+| M42 | missing stdin not reported | `test_cli_edges.py::test_a_missing_stdin_is_reported_and_other_files_still_run` |
+| M43 | missing stdout not reported | `test_cli_edges.py::test_a_missing_stdout_is_an_error[check0]` |
+| M44 | Windows closed pipe (EINVAL) not recognised | `test_cli_edges.py::test_a_reader_that_leaves_early_stops_check_quietly` |
+| M45 | every write error taken for a closed reader | `test_cli_io.py::test_a_write_error_other_than_a_closed_reader_is_raised` |
+| M46 | stdout not silenced after the reader left | `test_cli_edges.py::test_a_reader_that_leaves_early_stops_check_quietly` |
+| M47 | last character of each block dropped | `test_scale.py::test_a_long_text_folds_like_its_characters` |
+| M48 | form names read case-insensitively | `test_cli_io.py::test_form_names_are_case_sensitive[ASCII]` |
+| M49 | invalid form echoed whole | `test_cli_edges.py::test_a_huge_form_value_is_quoted_short` |
+| M50 | BOM stripped from stdin | `test_cli_io.py::test_a_bom_on_stdin_is_kept[args0]` |
+| M51 | non UTF-8 file accepted | `test_cli_io.py::test_a_file_that_is_not_utf8_is_an_error_and_others_still_run` |
+| M52 | text of one block or less left unfolded | `__init__.py::unidash` |
+
 ## Packaging, e2e and Pythons (items 8, 10, 13, 14)
 
 - At 6101860 on another machine (CPython 3.14.2), fresh clone, `UNIDASH_E2E=1`: the e2e
@@ -155,12 +179,12 @@ test that failed. M37 came with its test at 6101860 and was run alone on this PC
   drives the API from an empty folder with `-I`, and runs the `unidash` script and
   `python -m unidash` by subprocess (filter, `--form`, `--punct`, `--script-hyphens`,
   `--check` on a file and on stdin, `--version`, non UTF-8 input exits 2).
-- At 25a6b63 on this PC: wheel and sdist built from a fresh clone, `twine check --strict`
-  passed for both; for each of CPython 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2 and 3.14.2
-  free-threaded, the wheel in a fresh venv and the sdist's own suite with `src` removed
-  (fetched data and oracles present): 191 passed, 2 skipped (the opt-in e2e and the POSIX
-  file name test), plus the 9 doctests of the installed package. 3.8 and 3.9 are below
-  `requires-python`. The thread test added after was run on 3.14.2t and 3.13.2.
+- At d9dc54f (final code) on this PC, as at 25a6b63 before the QA fixes: wheel and sdist
+  built from a fresh clone, `twine check --strict` passed for both; for each of CPython
+  3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2 and 3.14.2 free-threaded, the wheel in a fresh venv
+  and the sdist's own suite with `src` removed (fetched data, oracles and mypy present): 239
+  collected, all passed except the opt-in e2e and the POSIX file name test, plus the 9
+  doctests of the installed package. 3.8 and 3.9 are below `requires-python`.
 - Wheel: the ten modules, `py.typed`, METADATA, the entry point
   `unidash = unidash._cli:main` and `licenses/LICENSE`. Sdist: sources, tests, scripts,
   docs, LICENSE and the data manifest; no fetched data, no report files, no caches. The only
@@ -169,11 +193,12 @@ test that failed. M37 came with its test at 6101860 and was run alone on this PC
 
 ## Gates (item 15)
 
-At 29b10bb on another machine (CPython 3.14.2) from a fresh clone, each command on its own,
-with the fetched Unicode data, the oracle packages and `UNIDASH_E2E=1`: `ruff format --check .`,
-`ruff check .`, `mypy --strict src`, `mypy --strict src tests` and `pytest` (202 passed,
-1 skipped: the POSIX file name test, which cannot run on Windows) all exit 0. QA round 1
-changed code after this; its gate run is below.
+At d9dc54f (final code) on this PC (CPython 3.13.2) from a fresh clone, each command on its
+own, with the fetched Unicode data, the oracle packages and `UNIDASH_E2E=1` (so the wheel e2e,
+CLI by subprocess included, runs): `ruff format --check .`, `ruff check .`, `mypy --strict src`,
+`mypy --strict src tests` and `pytest` (247 passed, 1 skipped: the POSIX file name test,
+which cannot run on Windows) all exit 0. Earlier runs: 29b10bb (202 passed) and 04fe387
+(225 passed), both on another machine with CPython 3.14.2.
 
 ## QA lenses (item 19) and independent review (item 16)
 
@@ -193,8 +218,17 @@ e2e) and e (contract strength, 79 mutants of its own) all returned FAIL. Every f
 | b-F3 (low): two spacing marks are confusables of `-` | "letters and marks", U+1BF3 and U+AA7D named | data test asserts both are marks |
 | b-F4, a-A3, a-A4 (low): U+3030 comment; undated 0.x sections; CONTRIBUTING | comment names the two listed wavy dashes; 0.1.0 and 0.2.0 dated and marked unpublished; CONTRIBUTING says what tests read, write and run | |
 
-Gates at 04fe387 on Elena's PC (CPython 3.14.2, fresh clone with the Unicode data, the oracles and
-`UNIDASH_E2E=1`): `ruff format --check .`, `ruff check .`, `mypy --strict src`, `mypy --strict src
-tests` exit 0, `pytest` 225 passed, 1 skipped (POSIX file names).
+Round 2, on 92a59e7: lens b (ground truth) PASS, 40 new probes on the changed code and no
+finding. The other lenses' findings, all fixed in 4d98934 and d9dc54f:
 
-Disputed findings: none. Next: round 2 by the same lenses, then the independent review.
+| Finding | Fix | Proof |
+| --- | --- | --- |
+| With stderr closed, `print(file=None)` wrote diagnostics into the folded output or the `--check` report | `_report` and the parser drop them when `sys.stderr` is None | `test_cli_io.py`: in process and a real child with stderr closed write only data (M38, M41) |
+| A usage error naming a huge unknown option echoed it whole | usage errors cut at 200 characters | `test_a_huge_unknown_argument_is_cut_short` (M39, M40) |
+| markdown-it-py reads `--` as an en dash only with whitespace on both sides or on neither; the docs claimed exact read-back | README and GUIDE state the exception; the oracle texts pick the space on each side apart | oracle test expects hyphens for lopsided en dashes (over 50 cases), plus a direct test |
+| Mutants surviving the suite: CLI writing only the first block or stopping after it, forms in any case, non UTF-8 replaced, stdin BOM lost, any write error swallowed | new CLI contracts in `tests/test_cli_io.py` | the second author round above kills each of these shapes |
+| The close-early test passed 300 full temporary paths, near the Windows command line limit | bare names with the folder as cwd | test unchanged in intent |
+| The linear time test could fail on a loaded machine | sizes of 200,000 and 1,600,000 characters, bound 40 (linear about 8, quadratic 64) | steady on the final runs |
+| GUIDE silent on other write errors and on case in form names | a full disk raises with a traceback; form names are exact | M45, M48 |
+
+Disputed findings: none. Next: the five lenses on d9dc54f, then the independent review.
