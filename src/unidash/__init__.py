@@ -12,8 +12,7 @@ Unicode 18.0 Dash property, and ``Form`` is the type of the ``form`` argument: o
 'a--b'
 """
 
-from __future__ import annotations
-
+# No __future__ import here: it would leave a public "annotations" name on the package.
 from ._dashes import DASHES, dash_table, find_dashes, fold_dashes, is_dash, iter_fold_dashes
 from ._fold import to_ascii_punct
 from ._hit import DashHit

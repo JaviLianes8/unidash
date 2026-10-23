@@ -1,0 +1,7 @@
+# Independent programs the oracle tests compare against (tests/test_oracles.py). Optional:
+# each test skips when its package is absent. Versions used for the 1.0.0 certification.
+regex==2026.9.29
+Markdown==3.11.2
+markdown-it-py==4.2.0
+docutils==0.23
+smartypants==2.0.2
