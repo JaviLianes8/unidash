@@ -130,3 +130,15 @@ def test_the_installed_tool_cuts_a_huge_file_name_short(tmp_path: Path) -> None:
     )
     assert result.returncode == 2
     assert len(result.stderr) < 500, len(result.stderr)
+
+
+@pytest.mark.parametrize("check", [[], ["--check"]])
+def test_a_name_with_a_nul_is_reported_and_others_still_run(
+    check: list[str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The system call refuses the name with ValueError, on every platform.
+    monkeypatch.chdir(tmp_path)
+    run = Run(monkeypatch, EM.encode())
+    assert main([*check, "a" + chr(0) + "b.txt", "-"]) == 2
+    assert run.err.getvalue().startswith("unidash: a")
+    assert run.out.getvalue() == (b"<stdin>:1:1: U+2014 EM DASH\n" if check else b"-")

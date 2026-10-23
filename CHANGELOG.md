@@ -51,8 +51,9 @@ moves a character that is already classified.
   (`unidash --check big.txt | head`), as it already did elsewhere, instead of printing a
   traceback and exiting 120.
 - `unidash --check` no longer crashes when a file name holds a lone surrogate (possible on
-  Windows): the name is written with backslash escapes. On POSIX, a name the system cannot
-  encode is reported as an unreadable file (exit 2) instead of a traceback.
+  Windows): the name is written with backslash escapes. A name the system refuses (one with
+  a NUL character, or on POSIX a lone surrogate) is reported as an unreadable file (exit 2)
+  instead of a traceback.
 - The `DashHit` fields are annotated with `int` and `str` at runtime, so `help()` and
   `inspect.signature` show real types instead of `ForwardRef` strings.
 
