@@ -1,7 +1,7 @@
 """Where a dash sits in a text: the ``DashHit`` record and the line and column scan."""
 
-from __future__ import annotations
-
+# No __future__ import here: on a NamedTuple it would leave the public fields annotated with
+# ForwardRef strings instead of int and str.
 import unicodedata
 from collections.abc import Iterator
 from typing import NamedTuple

@@ -177,9 +177,9 @@ superscript two becomes `2`).
 
 Typography converters (Python-Markdown's `smarty`, the markdown-it-py typographer, docutils, and
 `smartypants` with old-school dashes, `Attr.D`; by default it reads `--` as an em dash) turn `--`
-and `---` into en and em dashes. En and em dashes in the `tex` form read back exactly through all
-four (tested; markdown-it-py keeps `--` spaced on one side only, see the guide). `unidash` folds
-only punctuation, classifies every Dash character, leaves letters alone, has no dependencies and is fully typed.
+and `---` into en and em dashes. In the `tex` form, en and em dashes between words, spaces and
+sentence punctuation read back exactly through all four (tested; exceptions in the guide). `unidash`
+folds only punctuation, classifies every Dash character, leaves letters alone, has no dependencies and is fully typed.
 
 ## Development
 

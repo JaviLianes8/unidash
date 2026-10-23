@@ -25,6 +25,8 @@ FORMS: tuple[Form, ...] = ("ascii", "tex", "typographic")
 SOFT, BOM, CR, LF = chr(0xAD), chr(0xFEFF), chr(13), chr(10)
 SPECIAL = [*sorted(DASHES), SOFT, BOM, CR, LF, CR + LF, "\x00", chr(0x301), chr(0xD800)]
 SPECIAL += [chr(0xDFFF), chr(0x10FFFF), chr(0x1F600), chr(0x2026), chr(0x201C), chr(0xFF5E)]
+# Separators that end a line for str.splitlines but not for find_dashes.
+SPECIAL += [chr(0x0B), chr(0x0C), chr(0x85), chr(0x2028), chr(0x2029)]
 SEEDS = (11, 23, 2026)
 
 

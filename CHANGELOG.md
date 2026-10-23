@@ -36,6 +36,10 @@ moves a character that is already classified.
   is cut there.
 - With no standard error, the command line drops its diagnostics instead of writing them
   into the folded output or the `--check` report.
+- `--punct` refuses any explicit `--form`, `--form ascii` included; before, only a form
+  other than the default was refused.
+- A file the command line cannot read is reported with the system's reason only (the name is
+  no longer repeated), and a file name longer than 200 characters is cut in the message.
 
 ### Fixed
 
@@ -45,6 +49,11 @@ moves a character that is already classified.
 - On Windows, the command line stops quietly with exit 1 when the reader closes stdout early
   (`unidash --check big.txt | head`), as it already did elsewhere, instead of printing a
   traceback and exiting 120.
+- `unidash --check` no longer crashes when a file name holds a lone surrogate (possible on
+  Windows): the name is written with backslash escapes. On POSIX, a name the system cannot
+  encode is reported as an unreadable file (exit 2) instead of a traceback.
+- The `DashHit` fields are annotated with `int` and `str` at runtime, so `help()` and
+  `inspect.signature` show real types instead of `ForwardRef` strings.
 
 ### Added
 

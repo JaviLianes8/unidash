@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from unidash import fold_dashes
-from unidash._cli import _reader_left, main
+from unidash._cli import _parser, _reader_left, main
 from unidash._tables import BLOCK
 
 EM, EN, BOM = chr(0x2014), chr(0x2013), chr(0xFEFF)
@@ -90,6 +90,19 @@ def test_a_huge_unknown_argument_is_cut_short(
     assert len(error) < 1000, len(error)
     assert error.startswith("usage: unidash")
     assert "QQQQ" in error and "characters)" in error
+
+
+@pytest.mark.parametrize(("size", "cut"), [(199, False), (200, False), (201, True)])
+def test_usage_errors_are_cut_only_past_two_hundred_characters(
+    size: int, cut: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run = Run(monkeypatch)
+    message = "m" * (size - 1) + "z"
+    with pytest.raises(SystemExit):
+        _parser().error(message)
+    last = run.err.getvalue().splitlines()[-1]
+    whole = f"unidash: error: {message}"
+    assert last == (f"{whole[:-1]}... ({size} characters)" if cut else whole)
 
 
 @pytest.mark.parametrize("check", [[], ["--check"]])

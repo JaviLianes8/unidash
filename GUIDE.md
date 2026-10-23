@@ -38,13 +38,17 @@ Time is linear in the length of the text, also when most characters grow (the `t
 
 The `tex` form follows the TeX and Markdown convention, so it is one way only where dashes
 touch: an en dash followed by an ASCII hyphen gives `---`, which a converter reads as an em
-dash. En and em dashes separated by any other character read back exactly through
-Python-Markdown (`smarty`), docutils, and smartypants with old-school dashes
-(`smartypants.Attr.D`; by default smartypants reads `--` as an em dash), and through the
-markdown-it-py typographer with one exception: it reads `--` as an en dash only with
-whitespace on both sides or on neither, so an en dash with a space on one side only
-(`10 --20`) stays two hyphens there. The tests check all four, spaces on each side chosen
-apart. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an
+dash. En and em dashes between letters, digits, spaces or the sentence punctuation
+`. , ; : ? ! ( )` read back exactly through Python-Markdown (`smarty`), docutils, and
+smartypants with old-school dashes (`smartypants.Attr.D`; by default smartypants reads `--`
+as an em dash), and through the markdown-it-py typographer with one exception: it reads `--`
+as an en dash only with whitespace on both sides or on neither, so an en dash with a space on
+one side only (`10 --20`) stays two hyphens there. The tests check all four, with the
+punctuation and the spaces on each side chosen apart. Other neighbours can be markup: a
+backslash right before a dash escapes its first hyphen in Python-Markdown, markdown-it-py and
+smartypants (`a\---b` reads back as a hyphen and an en dash), markdown-it-py turns a `+`
+right before a dash into `±`, and Python-Markdown and markdown-it-py leave the hyphens inside
+code spans as written. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an
 em dash and U+FE32 as an en dash. Only docutils and smartypants read the 6 and 9 hyphens of
 U+2E3A and U+2E3B as two and three em dashes; Python-Markdown and markdown-it-py leave them
 as hyphens.
@@ -61,7 +65,8 @@ read lazily and each must be a `str`. `"".join(iter_fold_dashes(chunks))` equals
 Yields, in text order, a `DashHit` for every character that `fold_dashes` with the same
 options would change. Arguments are checked when it is called; the hits are produced lazily.
 
-`DashHit` is a named tuple `(offset, line, column, char, name)`:
+`DashHit` is a named tuple
+`(offset: int, line: int, column: int, char: str, name: str)`:
 
 - `offset` counts code points from 0, so `text[hit.offset] == hit.char`.
 - `line` counts from 1. A line ends at LF, CR or CRLF (one break), as editors count them;
@@ -143,9 +148,14 @@ unidash [--form {ascii,tex,typographic}] [--script-hyphens] [--keep-soft-hyphens
 
 - Reads each FILE (or stdin for `-` or no FILE) as UTF-8 and writes the folded bytes to
   stdout, byte for byte apart from the fold: line ends and a byte order mark are kept.
-- `--punct` uses `to_ascii_punct` and cannot be combined with the dash options.
+- `--punct` uses `to_ascii_punct` and cannot be combined with `--form` (not even
+  `--form ascii`), `--script-hyphens` or `--keep-soft-hyphens`.
 - `--check` writes nothing but `FILE:LINE:COLUMN: U+XXXX NAME` for each change, with the
-  positions of `find_dashes`.
+  positions of `find_dashes`. FILE is the name as given: undecodable bytes in a POSIX name
+  come back as they were, and other lone surrogates (possible in Windows names) as backslash
+  escapes such as `\ud800`.
+- A file that cannot be read is reported as `unidash: FILE: REASON`, with the system's
+  reason or the decoding error, and FILE cut after 200 characters.
 - Stdin is read only for `-`. With no standard input, `-` is reported as an unreadable
   file; with no standard output the tool stops at once with exit 2.
 - An invalid `--form` value is quoted to at most 40 characters in the usage error, and the

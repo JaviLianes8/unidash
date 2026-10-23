@@ -61,6 +61,12 @@ def test_find_counts_lines_like_an_editor() -> None:
     assert [(h.line, h.column) for h in find_dashes(text)] == [(2, 2), (3, 1), (5, 2)]
 
 
+@pytest.mark.parametrize("separator", [0x0B, 0x0C, 0x1C, 0x1D, 0x1E, 0x85, 0x2028, 0x2029])
+def test_other_line_separators_do_not_end_a_line(separator: int) -> None:
+    text = "a" + chr(separator) + "b" + EN + chr(10) + EM
+    assert [(h.line, h.column) for h in find_dashes(text)] == [(1, 4), (2, 1)]
+
+
 def test_a_leading_bom_takes_no_column() -> None:
     bom = chr(0xFEFF)
     assert [(h.line, h.column) for h in find_dashes(bom + EM + chr(10) + EM)] == [(1, 1), (2, 1)]

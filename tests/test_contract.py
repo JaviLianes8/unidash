@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.resources
+import inspect
 
 import unidash
 
@@ -34,6 +35,13 @@ def test_version_is_a_three_part_string() -> None:
     parts = unidash.__version__.split(".")
     assert len(parts) == 3
     assert all(part.isdigit() for part in parts)
+
+
+def test_dash_hit_fields_carry_their_real_types() -> None:
+    fields = {"offset": int, "line": int, "column": int, "char": str, "name": str}
+    assert unidash.DashHit.__annotations__ == fields
+    expected = "(offset: int, line: int, column: int, char: str, name: str)"
+    assert str(inspect.signature(unidash.DashHit)) == expected
 
 
 def test_the_package_ships_type_information() -> None:

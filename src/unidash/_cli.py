@@ -16,8 +16,15 @@ from ._mapping import PUNCTUATION_TABLE
 from ._tables import FORMS, Table, cached_table, translate_blocks
 
 _STDIN = "-"
-# Usage errors may hold whatever the caller typed; past this many characters they are cut.
+# Usage errors and file names may hold whatever the caller typed; past this many characters
+# they are cut.
 MESSAGE_LIMIT = 200
+
+
+def _cut(text: str) -> str:
+    if len(text) > MESSAGE_LIMIT:
+        return f"{text[:MESSAGE_LIMIT]}... ({len(text)} characters)"
+    return text
 
 
 def _report(message: str) -> None:
@@ -29,8 +36,7 @@ def _report(message: str) -> None:
 
 class _Parser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
-        if len(message) > MESSAGE_LIMIT:
-            message = f"{message[:MESSAGE_LIMIT]}... ({len(message)} characters)"
+        message = _cut(message)
         if sys.stderr is None:
             self.exit(2)
         self.print_usage(sys.stderr)
@@ -56,7 +62,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--form",
         type=_form,
-        default="ascii",
+        default=None,
         metavar="{" + ",".join(FORMS) + "}",
         help="target (default ascii)",
     )
@@ -74,10 +80,14 @@ def _parser() -> argparse.ArgumentParser:
 
 def _table(args: argparse.Namespace, parser: argparse.ArgumentParser) -> Table:
     if args.punct:
-        if args.form != "ascii" or args.script_hyphens or args.keep_soft_hyphens:
-            parser.error("--punct cannot be combined with the dash options")
+        # --form defaults to None, so an explicit --form ascii is refused like any other.
+        if args.form is not None or args.script_hyphens or args.keep_soft_hyphens:
+            parser.error(
+                "--punct cannot be combined with --form, --script-hyphens or --keep-soft-hyphens"
+            )
         return PUNCTUATION_TABLE
-    return cached_table(args.form, args.script_hyphens, args.keep_soft_hyphens)
+    form = "ascii" if args.form is None else args.form
+    return cached_table(form, args.script_hyphens, args.keep_soft_hyphens)
 
 
 def _read(name: str) -> str:
@@ -97,21 +107,39 @@ def _run(args: argparse.Namespace, table: Table, names: list[str], stdout: Binar
         label = "<stdin>" if name == _STDIN else name
         try:
             text = _read(name)
-        except (OSError, UnicodeDecodeError) as error:
-            _report(f"unidash: {label}: {error}")
+        # ValueError covers text that is not UTF-8 and, on POSIX, a name the system cannot
+        # encode (a lone surrogate).
+        except (OSError, ValueError) as error:
+            _report(f"unidash: {_cut(label)}: {_reason(error)}")
             status = 2
             continue
         if not args.check:
             for block in translate_blocks(text, table):
                 stdout.write(block.encode("utf-8"))
             continue
+        prefix = _name_bytes(label)
         for hit in scan(text, table):
-            line = f"{label}:{hit.line}:{hit.column}: {hit.codepoint} {hit.name}\n"
-            # File names on POSIX may hold undecodable bytes; give them back as they were.
-            stdout.write(line.encode("utf-8", "surrogateescape"))
+            line = f":{hit.line}:{hit.column}: {hit.codepoint} {hit.name}\n"
+            stdout.write(prefix + line.encode("utf-8"))
             status = max(status, 1)
     stdout.flush()
     return status
+
+
+def _reason(error: Exception) -> str:
+    # An OSError's own text repeats the file name, which the message already holds.
+    if isinstance(error, OSError) and error.strerror:
+        return error.strerror
+    return str(error)
+
+
+def _name_bytes(label: str) -> bytes:
+    # File names on POSIX may hold undecodable bytes; give them back as they were. Other lone
+    # surrogates (Windows names may hold any) are written as backslash escapes.
+    try:
+        return label.encode("utf-8", "surrogateescape")
+    except UnicodeEncodeError:
+        return label.encode("utf-8", "backslashreplace")
 
 
 def main(argv: Sequence[str] | None = None) -> int:

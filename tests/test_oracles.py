@@ -19,7 +19,9 @@ from unidash import DASHES, fold_dashes
 from unidash._classes import GENERAL, KEPT, SCRIPT_HYPHENS
 
 EN, EM = chr(0x2013), chr(0x2014)
-WORDS = ["a", "word", "10", "x1", "Pages", "z"]
+WORDS = ["a", "word", "10", "x1", "Pages", "z", "caf" + chr(0xE9), chr(0x4E2D) + chr(0x6587)]
+# The sentence punctuation the GUIDE promises may touch a dash.
+BEFORE, AFTER = ["", "", "("], ["", "", ".", ",", ";", ":", "?", "!", ")"]
 
 
 def test_regex_dash_property_equals_the_dashes() -> None:
@@ -38,15 +40,17 @@ def test_regex_pd_category_is_classified() -> None:
 
 
 def _texts(seed: int, count: int = 300) -> list[str]:
-    # Words joined by single en or em dashes, with or without a space on each side, chosen
-    # apart. Adjacent dashes are left out: in the TeX convention "-----" has no single reading.
+    # Words (letters, digits, CJK) with sentence punctuation around them, joined by single en
+    # or em dashes, with or without a space on each side, chosen apart. Adjacent dashes are
+    # left out: in the TeX convention "-----" has no single reading. The first word is bare,
+    # so the text never opens with a Markdown list marker.
     rng = random.Random(seed)
     texts = []
     for _ in range(count):
         parts = [rng.choice(WORDS)]
         for _ in range(rng.randrange(1, 6)):
             dash = rng.choice(["", " "]) + rng.choice([EN, EM, " "]) + rng.choice(["", " "])
-            parts += [dash, rng.choice(WORDS)]
+            parts += [dash, rng.choice(BEFORE) + rng.choice(WORDS) + rng.choice(AFTER)]
         texts.append("".join(parts))
     return texts
 
@@ -102,6 +106,35 @@ def test_converters_read_the_tex_form_back_as_the_original_dashes(
     assert sum(1 for text in texts if LOPSIDED_EN.search(text)) > 50
     for text in texts:
         assert oracle(fold_dashes(text, "tex")) == expected(text), ascii(text)
+
+
+def test_sentence_punctuation_touches_dashes_in_the_texts() -> None:
+    texts = _texts(1) + _texts(2)
+    touching = re.compile(rf"[.,;:?!()][{EN}{EM}]|[{EN}{EM}][(]")
+    assert sum(1 for text in texts if touching.search(text)) > 50
+
+
+@pytest.mark.parametrize("oracle", [_python_markdown, _markdown_it, _smartypants])
+def test_a_backslash_before_a_dash_escapes_its_first_hyphen(
+    oracle: Callable[[str], str],
+) -> None:
+    # The GUIDE names this exception; docutils has no escapes and reads the dash back.
+    slash = chr(92)
+    assert oracle(fold_dashes("a" + slash + EM + "b", "tex")) == "a-" + EN + "b"
+    assert _docutils(fold_dashes("a" + slash + EM + "b", "tex")) == "a" + slash + EM + "b"
+
+
+def test_markdown_it_reads_a_plus_before_a_dash_as_plus_minus() -> None:
+    # The GUIDE names this exception: the replacements rule turns "+-" into U+00B1.
+    assert _markdown_it(fold_dashes("a+" + EM + "b", "tex")) == "a" + chr(0xB1) + EN + "b"
+    for oracle in (_python_markdown, _docutils, _smartypants):
+        assert oracle(fold_dashes("a+" + EM + "b", "tex")) == "a+" + EM + "b"
+
+
+def test_markdown_converters_leave_code_spans_as_written() -> None:
+    # The GUIDE names this exception too.
+    code = "x `a" + fold_dashes(EN, "tex") + "b` y"
+    assert _python_markdown(code) == _markdown_it(code) == "x <code>a--b</code> y"
 
 
 def test_markdown_it_leaves_an_en_dash_spaced_on_one_side_as_hyphens() -> None:
