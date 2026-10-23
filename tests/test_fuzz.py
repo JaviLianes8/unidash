@@ -162,3 +162,19 @@ def test_a_million_line_breaks_are_counted() -> None:
     text = CR * 1_000_000 + chr(0x2014)
     (hit,) = find_dashes(text)
     assert (hit.line, hit.column, hit.offset) == (1_000_001, 1, 1_000_000)
+
+
+def test_threads_get_the_same_results() -> None:
+    import concurrent.futures
+
+    rng = random.Random(5)
+    texts = [_text(rng) * 50 for _ in range(64)]
+
+    def work(text: str) -> tuple[str, str, list[int]]:
+        hits = [hit.offset for hit in find_dashes(text, "tex", script_hyphens=True)]
+        return fold_dashes(text, "tex", script_hyphens=True), to_ascii_punct(text), hits
+
+    expected = [work(text) for text in texts]
+    with concurrent.futures.ThreadPoolExecutor(4) as pool:
+        for _ in range(5):
+            assert list(pool.map(work, texts)) == expected
