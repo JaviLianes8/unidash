@@ -174,7 +174,11 @@ test that failed. M37 came with its test at 6101860 and was run alone on this PC
 
 ## Gates (item 15)
 
-Run on another machine from a fresh clone at the head named below; see the next commit.
+At 29b10bb on another machine (CPython 3.14.2) from a fresh clone, each command on its own,
+with the fetched Unicode data, the oracle packages and `UNIDASH_E2E=1`: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, `mypy --strict src tests` and `pytest` (202 passed,
+1 skipped: the POSIX file name test, which cannot run on Windows) all exit 0. Later commits
+change only this report.
 
 ## QA lenses (item 19) and independent review (item 16)
 
