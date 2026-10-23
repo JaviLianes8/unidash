@@ -117,7 +117,7 @@ def test_text_must_be_a_str() -> None:
 def test_unknown_form_is_rejected() -> None:
     with pytest.raises(ValueError, match="form must be one of ascii, tex, typographic"):
         fold_dashes("a", "latex")  # type: ignore[arg-type]
-    with pytest.raises(ValueError, match="form"):
+    with pytest.raises(TypeError, match="form must be a str, not list"):
         fold_dashes("a", ["ascii"])  # type: ignore[arg-type]
 
 

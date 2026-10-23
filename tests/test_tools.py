@@ -8,7 +8,7 @@ import unicodedata
 
 import pytest
 
-import unidash._dashes
+import unidash._hit
 from unidash import (
     DASHES,
     DashHit,
@@ -21,7 +21,7 @@ from unidash import (
     to_ascii_punct,
 )
 from unidash._classes import COMPATIBILITY, GENERAL, KEPT, SCRIPT_HYPHENS
-from unidash._dashes import scan
+from unidash._hit import scan
 
 EM, EN, SOFT, MAQAF = chr(0x2014), chr(0x2013), chr(0xAD), chr(0x5BE)
 FORMS: tuple[Form, ...] = ("ascii", "tex", "typographic")
@@ -48,7 +48,7 @@ def test_find_names_do_not_depend_on_the_interpreter_tables(
         def name(char: str, default: str) -> str:
             return default
 
-    monkeypatch.setattr(unidash._dashes, "unicodedata", NoNames)
+    monkeypatch.setattr(unidash._hit, "unicodedata", NoNames)
     (hit,) = find_dashes(chr(0x10EAD), script_hyphens=True)
     assert (hit.name, hit.codepoint) == ("YEZIDI HYPHENATION MARK", "U+10EAD")
     (unknown,) = scan("a" + chr(0x378), {0x378: "x"})
@@ -59,6 +59,12 @@ def test_find_counts_lines_like_an_editor() -> None:
     cr, lf = chr(13), chr(10)
     text = "a" + cr + "b" + EM + cr + lf + EM + lf + lf + "x" + EM
     assert [(h.line, h.column) for h in find_dashes(text)] == [(2, 2), (3, 1), (5, 2)]
+
+
+@pytest.mark.parametrize("separator", [0x0B, 0x0C, 0x1C, 0x1D, 0x1E, 0x85, 0x2028, 0x2029])
+def test_other_line_separators_do_not_end_a_line(separator: int) -> None:
+    text = "a" + chr(separator) + "b" + EN + chr(10) + EM
+    assert [(h.line, h.column) for h in find_dashes(text)] == [(1, 4), (2, 1)]
 
 
 def test_a_leading_bom_takes_no_column() -> None:

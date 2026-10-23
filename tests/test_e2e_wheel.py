@@ -28,6 +28,7 @@ import unidash as u
 assert "site-packages" in u.__file__, u.__file__
 assert importlib.metadata.version("unidash") == u.__version__
 assert importlib.resources.files("unidash").joinpath("py.typed").is_file()
+assert sorted(u.__all__) == sorted(n for n in vars(u) if not n.startswith("_"))
 assert len(u.__all__) == 9 and len(u.DASHES) == 31
 
 em, en, soft = chr(0x2014), chr(0x2013), chr(0xAD)
@@ -40,12 +41,16 @@ assert u.to_ascii_punct(chr(0x201C) + "x" + chr(0x201D) + chr(0x301C)) == '"x"~'
 assert (hit.line, hit.column, hit.codepoint, hit.name) == (2, 1, "U+2014", "EM DASH")
 assert "".join(u.iter_fold_dashes([en, em])) == "--"
 assert u.is_dash(chr(0x2212)) and not u.is_dash(soft)
-try:
-    u.fold_dashes("a", "latex")
-except ValueError:
-    pass
-else:
-    raise AssertionError("unknown form accepted")
+for bad, error in (("latex", ValueError), (["ascii"], TypeError), ("x" * 10**6, ValueError)):
+    try:
+        u.fold_dashes("a", bad)
+    except error as caught:
+        assert len(str(caught)) < 120
+    else:
+        raise AssertionError("bad form accepted")
+import pickle
+assert u.DashHit.__module__ == "unidash"
+assert pickle.loads(pickle.dumps(hit)) == hit
 print("e2e ok")
 """
 
@@ -72,6 +77,12 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
         members = archive.getnames()
     data = [name for name in members if "/tests/vectors/" in name]
     assert data == [name for name in data if name.endswith("/MANIFEST.txt")]
+    top = {name.split("/", 1)[1] for name in members if "/" in name}
+    assert {"LICENSE", "README.md", "CHANGELOG.md", "GUIDE.md", "pyproject.toml"} <= top
+    assert not [name for name in top if name.startswith(("CERT-1.0", "IMPROVEMENTS"))]
+    assert not [name for name in members if "__pycache__" in name or name.endswith(".pyc")]
+    assert [name for name in names if name.endswith(".dist-info/licenses/LICENSE")]
+    assert not [name for name in names if not name.startswith("unidash")]
 
     env_dir = tmp_path / "venv"
     venv.create(env_dir, with_pip=True)
@@ -94,3 +105,40 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     assert check.stdout.decode().splitlines() == ["a.md:1:2: U+2014 EM DASH"]
     filtered = _run(python, "-I", "-m", "unidash", "-", cwd=work, stdin="a\u2013b".encode())
     assert filtered == b"a-b"
+    version = _run(script, "--version", cwd=work).decode().strip()
+    assert version == "unidash " + _pyproject_version()
+    quotes = (chr(0x201C) + "q" + chr(0x201D) + chr(0x5BE)).encode()
+    assert _run(script, "--punct", cwd=work, stdin=quotes) == b'"q"' + chr(0x5BE).encode()
+    hebrew = _run(script, "--script-hyphens", "--form", "typographic", cwd=work, stdin=quotes)
+    assert hebrew.decode() == chr(0x201C) + "q" + chr(0x201D) + chr(0x2010)
+    stdin_check = subprocess.run(
+        [str(script), "--check", "--keep-soft-hyphens"],
+        cwd=work,
+        input=("a" + chr(0xAD) + chr(10) + chr(0x2212)).encode(),
+        capture_output=True,
+        check=False,
+    )
+    assert (stdin_check.returncode, stdin_check.stdout) == (1, b"<stdin>:2:1: U+2212 MINUS SIGN\n")
+    broken = subprocess.run([str(script)], cwd=work, input=b"caf\xe9", capture_output=True)
+    assert broken.returncode == 2
+    assert broken.stdout == b""
+    assert broken.stderr.decode().startswith("unidash: <stdin>: ")
+    (work / "big.txt").write_bytes(("x" + chr(0x2014) + chr(10)).encode() * 400_000)
+    for args in (["--check", "big.txt"], ["--form", "tex", *["big.txt"] * 5]):
+        assert _close_early([str(script), *args], work) == (1, b"")
+
+
+def _close_early(cmd: list[str], cwd: Path) -> tuple[int, bytes]:
+    # The reader takes a little output, then goes away, like ``unidash big.txt | head``.
+    process = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    assert process.stdout is not None and process.stderr is not None
+    assert process.stdout.read(64)
+    process.stdout.close()
+    errors = process.stderr.read()
+    process.stderr.close()
+    return process.wait(timeout=120), errors
+
+
+def _pyproject_version() -> str:
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    return text.split('version = "', 1)[1].split('"', 1)[0]

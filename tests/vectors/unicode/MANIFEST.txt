@@ -1,7 +1,7 @@
 # Third-party data: Unicode Character Database and UTS #39 security data. Not committed;
 # fetch it with
 #   python scripts/fetch_vectors.py
-# Revision: Unicode 18.0.0
+# Revision: Unicode 18.0.0 (last fetched and verified against this manifest on 2026-10-23)
 # Licence: Unicode License v3 (https://www.unicode.org/license.txt)
 # sha256  size  name  url
 0736451de439ae7baf1425136617da495e09ee5afbe6e394374db7009ea08950  2243593  UnicodeData.txt  https://www.unicode.org/Public/18.0.0/ucd/UnicodeData.txt

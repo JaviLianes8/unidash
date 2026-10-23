@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from functools import cache
 from typing import Literal, get_args
 
@@ -20,19 +21,9 @@ FORMS: tuple[str, ...] = get_args(Form)
 Table = dict[int, str | None]
 
 
-def check_options(form: object, script_hyphens: object, keep_soft_hyphens: object) -> None:
-    if not isinstance(form, str) or form not in FORMS:
-        raise ValueError(f"form must be one of {', '.join(FORMS)}, not {form!r}")
-    for label, flag in (
-        ("script_hyphens", script_hyphens),
-        ("keep_soft_hyphens", keep_soft_hyphens),
-    ):
-        if not isinstance(flag, bool):
-            raise TypeError(f"{label} must be a bool, not {type(flag).__name__}")
-
-
 @cache
 def cached_table(form: str, script_hyphens: bool, keep_soft_hyphens: bool) -> Table:
+    # Callers pass checked, exact values only, so the cache holds at most twelve tables.
     table: Table
     if form == "typographic":
         table = dict(COMPATIBILITY.items())
@@ -49,9 +40,17 @@ def cached_table(form: str, script_hyphens: bool, keep_soft_hyphens: bool) -> Ta
     return table
 
 
-def dash_table(
-    form: Form = "ascii", *, script_hyphens: bool = False, keep_soft_hyphens: bool = False
-) -> dict[int, str | None]:
-    """Return a fresh ``str.translate`` table for ``form``; ``None`` values delete."""
-    check_options(form, script_hyphens, keep_soft_hyphens)
-    return dict(cached_table(form, script_hyphens, keep_soft_hyphens))
+# One str.translate call over a long text whose characters grow (TeX widths, the ellipsis)
+# takes quadratic time on CPython; translating bounded blocks keeps it linear.
+BLOCK = 65_536
+
+
+def translate_blocks(text: str, table: Table) -> Iterator[str]:
+    for start in range(0, len(text), BLOCK):
+        yield text[start : start + BLOCK].translate(table)
+
+
+def translate(text: str, table: Table) -> str:
+    if len(text) <= BLOCK:
+        return text.translate(table)
+    return "".join(translate_blocks(text, table))

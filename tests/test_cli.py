@@ -172,3 +172,20 @@ def test_undecodable_file_names_are_reported_as_given(
     run = Run(monkeypatch)
     assert main(["--check", os.fsdecode(raw)]) == 1
     assert run.out.getvalue() == raw + b":1:1: U+2014 EM DASH\n"
+
+
+def test_importing_the_main_module_does_not_run_the_tool(monkeypatch: pytest.MonkeyPatch) -> None:
+    import importlib
+
+    run = Run(monkeypatch, EM.encode())
+    sys.modules.pop("unidash.__main__", None)
+    importlib.import_module("unidash.__main__")
+    assert run.out.getvalue() == b""
+
+
+def test_large_input_is_checked_line_by_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    run = Run(monkeypatch, (("ab" + EM + "\r\n") * 100_000).encode())
+    assert main(["--check"]) == 1
+    lines = run.out.getvalue().decode().splitlines()
+    assert len(lines) == 100_000
+    assert lines[-1] == "<stdin>:100000:3: U+2014 EM DASH"

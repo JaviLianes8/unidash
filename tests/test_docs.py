@@ -84,6 +84,17 @@ def test_every_public_name_appears_in_the_readme() -> None:
         assert f"`{name}" in _readme() or name == "Form", name
 
 
+def test_the_guide_covers_every_public_name() -> None:
+    guide = (ROOT / "GUIDE.md").read_text(encoding="utf-8")
+    for name in unidash.__all__:
+        assert f"`{name}" in guide, name
+
+
+def test_readme_links_are_absolute() -> None:
+    for target in re.findall(r"\]\(([^)]+)\)", _readme()):
+        assert target.startswith("https://"), target
+
+
 def test_version_matches_pyproject() -> None:
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     match = re.search(r'^version = "([^"]+)"$', text, flags=re.MULTILINE)

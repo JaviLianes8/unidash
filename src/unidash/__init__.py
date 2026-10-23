@@ -1,12 +1,28 @@
-"""Fold Unicode dashes and punctuation to plain ASCII while leaving letters untouched."""
+r"""Fold Unicode dashes and punctuation to plain ASCII while leaving letters untouched.
 
-from __future__ import annotations
+The public names are listed in ``__all__``. ``DASHES`` is the set of every character with the
+Unicode 18.0 Dash property, and ``Form`` is the type of the ``form`` argument: one of
+``"ascii"``, ``"tex"`` or ``"typographic"``.
 
-from ._dashes import DASHES, DashHit, find_dashes, fold_dashes, is_dash, iter_fold_dashes
+>>> import unidash
+>>> len(unidash.DASHES), "-" in unidash.DASHES, "\u2014" in unidash.DASHES
+(31, True, True)
+>>> form: unidash.Form = "tex"
+>>> unidash.fold_dashes("a\u2013b", form)
+'a--b'
+"""
+
+# No __future__ import here: it would leave a public "annotations" name on the package.
+from ._dashes import DASHES, dash_table, find_dashes, fold_dashes, is_dash, iter_fold_dashes
 from ._fold import to_ascii_punct
-from ._tables import Form, dash_table
+from ._hit import DashHit
+from ._tables import Form
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
+
+# DashHit shows and pickles as unidash.DashHit, so a pickle never depends on the private
+# module that defines it.
+DashHit.__module__ = __name__
 
 __all__ = [
     "DASHES",
