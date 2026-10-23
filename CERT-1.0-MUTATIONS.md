@@ -97,3 +97,18 @@ surviving at 6fa3a04.
 | M64 | usage error cut at exactly 200 (lens e N13) | `test_cli_io.py::test_usage_errors_are_cut_only_past_two_hundred_characters[200-False]` |
 | M65 | usage error cut one character short | `test_cli_io.py::test_usage_errors_are_cut_only_past_two_hundred_characters[201-True]` |
 | M66 | vertical tab and form feed end a line | `test_fuzz.py::test_find_dashes_positions_match_an_independent_count[11]` |
+
+## Fourth author round
+
+Each mutant applied alone to `git archive 2bd07b5` plus the fetched data, CPython 3.13.2 with
+the oracles and mypy, full suite with `-x`, on this PC; the unmutated tree passed first. All
+6 killed. M68 and M69 are the mutants QA lens e found surviving at 46ebbae (P21 and P30).
+
+| Mutant | Change | First failing test |
+| --- | --- | --- |
+| M67 | surrogateescape on every platform (the round 4 bug) | `test_cli_names.py::test_check_reports_a_name_with_a_lone_surrogate_escaped[56448]` |
+| M68 | POSIX undecodable bytes escaped too | `test_cli_names.py::test_report_names_follow_the_file_system_error_handler[surrogateescape-x\x80]` |
+| M69 | `--check` prefix shortened like the error name | `test_cli_names.py::test_check_writes_a_long_readable_name_whole` |
+| M70 | lone surrogates written as question marks | `test_cli_names.py::test_check_reports_a_name_with_a_lone_surrogate_escaped[55296]` |
+| M71 | POSIX fallback replaces instead of escaping | `test_cli_names.py::test_report_names_follow_the_file_system_error_handler[surrogateescape-x\x80]` |
+| M72 | surrogatepass taken for POSIX bytes | `test_cli_names.py::test_check_reports_a_name_with_a_lone_surrogate_escaped[56448]` |
