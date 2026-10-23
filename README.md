@@ -1,12 +1,18 @@
 # unidash
 
+[![Lianes8 Certified](https://lianes8studio.com/certified/lianes8-certified-badge.svg)](https://lianes8studio.com/certified)
+
 Fold Unicode dashes and punctuation to plain ASCII while leaving letters untouched.
 
 Text pasted from word processors, PDFs, CJK input methods and web pages is full of
 characters that look like `-` but are not: en and em dashes, the minus sign, the
 non-breaking hyphen, fullwidth and small forms, and the invisible soft hyphen. They break
 search, diffs, command lines and parsers. `unidash` knows every character with the Unicode
-Dash property, plus the soft hyphen, and folds them the way you choose.
+18.0 Dash property, plus the soft hyphen, and folds them the way you choose.
+
+The full contract of every function is in the
+[guide](https://github.com/JaviLianes8/unidash/blob/main/GUIDE.md), and every change is in
+the [changelog](https://github.com/JaviLianes8/unidash/blob/main/CHANGELOG.md).
 
 ## Install
 
@@ -67,8 +73,8 @@ print(ascii(fold_dashes("\u05e2\u05be\u05d1", script_hyphens=True)))
 `find_dashes` yields a `DashHit` (offset, line, column, character and Unicode name) for
 every character `fold_dashes` would change with the same options, which makes a lint or a
 pre-commit check a one-liner. Lines end at LF, CR or CRLF, columns count code points from 1,
-and a byte order mark at the start of the text takes no column. `is_dash(char)` tells whether a character has the Unicode Dash
-property and `DASHES` is that set. `dash_table(...)` returns the `str.translate` table, and
+and a byte order mark at the start of the text takes no column. `is_dash(char)` tells whether
+a character has the Unicode Dash property and `DASHES` is that set. `dash_table(...)` returns the `str.translate` table, and
 `iter_fold_dashes(chunks, ...)` folds an iterable of strings lazily, for large inputs.
 
 ```python
@@ -104,7 +110,8 @@ print(to_ascii_punct("\u201cCaf\u00e9\u201d\u2014it\u2019s 100\u00a0%\u2026"))
 `unidash FILE...` writes the folded text to stdout (`-` or no file reads stdin). It takes
 `--form`, `--script-hyphens`, `--keep-soft-hyphens`, and `--punct` for the full punctuation
 fold. `--check` lists what would change and exits 1, for pre-commit hooks. Input must be
-UTF-8; unreadable files exit 2.
+UTF-8; an unreadable or non UTF-8 file is reported on stderr, the other files are still
+processed, and the exit code is 2.
 
 ```
 $ unidash --check notes.md
@@ -151,35 +158,40 @@ Script hyphens, folded only with `script_hyphens=True` (to `-`, or to U+2010 in
 SYLLABICS HYPHEN, U+1806 MONGOLIAN TODO SOFT HYPHEN, U+30A0 KATAKANA-HIRAGANA DOUBLE HYPHEN,
 U+10D6E GARAY HYPHEN and U+10EAD YEZIDI HYPHENATION MARK.
 
-The double hyphens (U+2E40, and U+1400 and U+30A0 among the script hyphens) become `-`
-although UTS #39 lists them as confusable with `=`: they are hyphens in use, and `=` would
-change the meaning of the text.
-
 Never folded: U+002D HYPHEN-MINUS, and U+207B SUPERSCRIPT MINUS and U+208B SUBSCRIPT MINUS,
 which sit next to superscript and subscript digits that stay as they are. Characters that
-only look like a hyphen are not dashes and are left alone: letters in other scripts, the Arabic
-full stop, the hyphen bullet, U+02D7 MODIFIER LETTER MINUS SIGN (a tone mark), and minus-like
-symbols without the Dash property such as U+2052 COMMERCIAL MINUS SIGN, U+2796 HEAVY MINUS
-SIGN (an emoji), U+2E43 DASH WITH LEFT UPTURN and U+10D8F GARAY MINUS SIGN.
+only look like a hyphen (letters, the hyphen bullet, minus-like symbols without the Dash
+property) are left alone; the guide lists them with the reason for each.
 
 ## Why
 
-Tools like `unidecode` and `anyascii` transliterate every character, so `café` turns into
-`cafe`. That is the wrong tool when you only want to tidy punctuation and keep the words.
-`smartypants` goes the opposite way, turning ASCII into typographic dashes. `unidash` folds
-punctuation to ASCII, knows the whole Unicode dash family rather than the three most common
-members, and leaves letters alone. It is zero dependency and typed.
+Transliterators fold too much. `unidecode` 1.4.0 and `anyascii` 0.3.3 turn every character
+into ASCII, so `café` becomes `cafe` and a Chinese character becomes its romanisation; that
+is the wrong tool when you only want to tidy punctuation and keep the words. `unidecode` also
+writes an em dash as `--`, which a Markdown converter reads back as an en dash.
+
+Unicode normalization folds too little. NFKC (`unicodedata.normalize`) maps the small,
+fullwidth and vertical dash forms, but leaves the en dash, the em dash and the minus sign as
+they are, and it changes letters and digits too (the `fi` ligature becomes `fi`, a
+superscript two becomes `2`).
+
+Typography converters (`smartypants`, Python-Markdown's `smarty`, the markdown-it-py
+typographer, docutils) go the other way, `--` and `---` to en and em dashes; the `tex` form
+writes exactly what all four read back, and the tests check it. `unidash` folds only
+punctuation, puts every Dash character in a documented class, leaves letters alone, has no
+dependencies and is fully typed.
 
 ## Development
 
 The Unicode data files are not part of the repository. `python scripts/fetch_vectors.py`
 downloads them into `tests/vectors/unicode/` and checks each against the size and SHA-256 in
-`MANIFEST.txt`; without them the data tests skip. The installed-wheel test runs with
-`UNIDASH_E2E=1`.
+`MANIFEST.txt`; without them the data tests skip. The comparisons with independent programs
+need the packages in `requirements-oracles.txt` and skip without them. The installed-wheel
+test runs with `UNIDASH_E2E=1`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/JaviLianes8/unidash/blob/main/LICENSE).
 
 ## Links
 
