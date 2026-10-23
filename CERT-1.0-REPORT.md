@@ -17,6 +17,8 @@ Progress:
 - [x] PR and trace guard
 - [x] QA rounds 1 and 2: every finding fixed
 - [x] Second author mutation round on the fix code, final matrix and gates at d9dc54f
+- [x] QA round 3 (five lenses on 6fa3a04): every finding fixed
+- [ ] Third mutation round, matrix and gates on the round 3 code
 - [ ] Five QA lenses passing on the final code (item 19)
 - [ ] Independent reviewer (item 16)
 
@@ -41,7 +43,7 @@ Progress:
 | 15 | Gates each exit 0 | PASS: at d9dc54f, see Gates |
 | 16 | Independent reviewer | pending (next stage) |
 | 17 | PR and trace guard | PR from `release/1.0.0`, trace guard CLEAN; merge and publish left to the maintainer |
-| 18 | Contracts bite (mutations) | PASS: two author rounds, 37 and 15 mutants, all killed |
+| 18 | Contracts bite (mutations) | PASS: three author rounds, all killed (CERT-1.0-MUTATIONS.md) |
 | 19 | Five independent QA lenses | pending (next stage) |
 
 ## Baseline on 0.2.0 (before any change)
@@ -84,7 +86,8 @@ committed or shipped.
   every confusable of `-` folds, is a letter or a mark, or is a listed non-dash; ASCII targets agree.
 - regex 2026.9.29, an independent implementation of the Unicode properties: `\p{Dash}` over
   every code point equals `DASHES` (31), and the 27 `\p{Pd}` code points are all classified.
-- Four typography converters, 600 seeded texts each: Python-Markdown 3.11.2 `smarty` (3.9 on
+- Four typography converters, 600 seeded texts each of words (letters, digits, CJK) with
+  sentence punctuation, joined by dashes and spaces: Python-Markdown 3.11.2 `smarty` (3.9 on
   Python 3.10), the markdown-it-py 4.2.0 typographer, docutils 0.23 smartquotes and
   smartypants 2.0.2 (`Attr.D`) read the `tex` form back as the original en and em dashes; docutils and
   smartypants read the two-em and three-em widths as two and three em dashes.
@@ -95,7 +98,8 @@ committed or shipped.
 ## Fuzz and hostile input (item 9)
 
 `tests/test_fuzz.py`, three seeds over text mixing every dash, CR, LF, CRLF, BOM, NUL, lone
-surrogates, astral and random code points: the fold is per character, idempotent and equal
+surrogates, the separators that do not end a line (VT, FF, U+0085, U+2028 and U+2029),
+astral and random code points: the fold is per character, idempotent and equal
 to `str.translate` with `dash_table`; the ASCII forms leave no foldable dash; every
 `find_dashes` position equals an independent count (split on line ends); chunked folding
 equals whole folding; `to_ascii_punct` is idempotent; no letter, mark or digit of any code
@@ -103,74 +107,15 @@ point changes; seven input shapes scale linearly from 50,000 to 400,000 characte
 million CRs are counted; four threads agree with the serial results. `test_cli.py` checks
 100,000 hits on stdin; a 1,000,000 character form string gives a short message.
 
-## Author mutation round (item 18)
+## Author mutation rounds (item 18)
 
-Each mutant applied alone to a copy of the tree at c76b0e7 (fetched Unicode data and the
-oracle packages present), full suite with `-x` and bytecode off, on another machine with
-CPython 3.14.2; the unmutated tree passed first. All 37 killed; the last column is the first
-test that failed. M37 came with its test at 6101860 and was run alone on this PC.
+Each mutant applied alone to a copy of the tree with the fetched data and the oracle packages,
+full suite with `-x`; the unmutated tree passed first. The tables, with the first test that
+failed for each mutant, are in CERT-1.0-MUTATIONS.md (not shipped).
 
-| Mutant | Change | First failing test |
-| --- | --- | --- |
-| M01 | message quote limit ten times larger | `test_contract_api.py::test_messages_quote_at_most_forty_characters[41]` |
-| M02 | off by one at the quote limit | `test_contract_api.py::test_a_forty_character_form_is_quoted_whole` |
-| M03 | str subclass kept as given | `test_contract_api.py::test_str_subclasses_are_read_as_their_characters` |
-| M04 | form compared through the subclass __eq__ | `test_contract_api.py::test_a_str_subclass_form_must_spell_a_form` |
-| M05 | flags accept any truthy value | `test_contract_api.py::test_every_folder_checks_its_options_the_same_way[fold_dashes]` |
-| M06 | wrong parameter name in the chunk error | `test_contract_api.py::test_a_bad_chunk_is_named_when_it_is_read` |
-| M07 | three-em dash as wide as two-em in tex | `test_dashes.py::test_tex_widens_the_long_dashes` |
-| M08 | script hyphen switch inverted | `test_cli.py::test_dash_options_reach_the_fold` |
-| M09 | soft hyphen switch inverted | `_dashes.py::unidash._dashes.dash_table` |
-| M10 | typographic script hyphens to ASCII | `test_cli.py::test_dash_options_reach_the_fold` |
-| M11 | typographic drops the compatibility forms | `_dashes.py::unidash._dashes.fold_dashes` |
-| M12 | swung dash to hyphen instead of tilde | `test_dashes.py::test_wavy_dashes_become_a_tilde` |
-| M13 | Unicode 14 oblique hyphen dropped | `__init__.py::unidash` |
-| M14 | vertical en dash target swapped with em | `test_dashes.py::test_typographic_unifies_the_compatibility_forms` |
-| M15 | astral script hyphen dropped | `__init__.py::unidash` |
-| M16 | subscript minus missing from the kept marks | `__init__.py::unidash` |
-| M17 | leading BOM takes a column | `test_cli.py::test_a_bom_survives_filtering_and_takes_no_column` |
-| M18 | CRLF counted as two line ends | `test_fuzz.py::test_find_dashes_positions_match_an_independent_count[11]` |
-| M19 | columns counted from 0 | `__init__.py::unidash.DashHit` |
-| M20 | code point not padded to four digits | `_dashes.py::unidash._dashes.find_dashes` |
-| M21 | names taken from the interpreter only | `test_tools.py::test_find_names_do_not_depend_on_the_interpreter_tables` |
-| M22 | a lone CR does not end a line | `test_fuzz.py::test_find_dashes_positions_match_an_independent_count[11]` |
-| M23 | is_dash accepts the empty string | `test_contract_api.py::test_is_dash_errors` |
-| M24 | streaming reads every chunk at once | `test_contract_api.py::test_a_bad_chunk_is_named_when_it_is_read` |
-| M25 | dash_table hands out the shared cached table | `test_contract_api.py::test_dash_table_is_fresh_and_equals_what_fold_uses` |
-| M26 | fullwidth offset off by one | `_fold.py::unidash._fold.to_ascii_punct` |
-| M27 | fullwidth tilde (CP932 wave dash) dropped | `test_fold.py::test_fullwidth_punctuation_folds_to_its_nfkc_ascii_form` |
-| M28 | ellipsis to two dots | `test_docs.py::test_each_example_prints_what_its_comments_say[3]` |
-| M29 | a finding hides an earlier read error | `test_cli.py::test_errors_win_over_findings_in_check` |
-| M30 | stdin may be named twice | `test_cli.py::test_stdin_twice_is_refused` |
-| M31 | closed pipe reported as success | `test_cli.py::test_a_closed_pipe_stops_quietly` |
-| M32 | --punct accepts --keep-soft-hyphens | `test_cli.py::test_punct_refuses_dash_options` |
-| M33 | DashHit pickles through the private module | `test_contract_api.py::test_dash_hit_is_a_named_tuple_that_pickles_as_public` |
-| M34 | to_ascii_punct takes any object | `test_contract_api.py::test_text_must_be_a_str[to_ascii_punct]` |
-| M35 | wrong error type for a non-str | `test_contract_api.py::test_every_folder_checks_its_options_the_same_way[fold_dashes]` |
-| M36 | filter rewrites CRLF line ends | `test_cli.py::test_stdin_is_filtered_to_stdout_byte_exactly` |
-| M37 | `python -m unidash` guard removed | `test_cli.py::test_importing_the_main_module_does_not_run_the_tool` |
-
-Second round, on the code the QA fixes added: each mutant alone on `git archive d9dc54f` plus the
-fetched data, CPython 3.13.2 with the oracles and mypy, full suite with `-x`, on this PC; the
-unmutated tree passed first. All 15 killed.
-
-| Mutant | Change | First failing test |
-| --- | --- | --- |
-| M38 | diagnostics printed with no stderr | `test_cli_io.py::test_with_no_stderr_diagnostics_stay_out_of_the_output[check0]` |
-| M39 | usage error limit 100 times larger | `test_cli_io.py::test_a_huge_unknown_argument_is_cut_short[args0]` |
-| M40 | long usage error kept whole | `test_cli_io.py::test_a_huge_unknown_argument_is_cut_short[args0]` |
-| M41 | usage error printed with no stderr | `test_cli_io.py::test_with_no_stderr_a_usage_error_writes_nothing` |
-| M42 | missing stdin not reported | `test_cli_edges.py::test_a_missing_stdin_is_reported_and_other_files_still_run` |
-| M43 | missing stdout not reported | `test_cli_edges.py::test_a_missing_stdout_is_an_error[check0]` |
-| M44 | Windows closed pipe (EINVAL) not recognised | `test_cli_edges.py::test_a_reader_that_leaves_early_stops_check_quietly` |
-| M45 | every write error taken for a closed reader | `test_cli_io.py::test_a_write_error_other_than_a_closed_reader_is_raised` |
-| M46 | stdout not silenced after the reader left | `test_cli_edges.py::test_a_reader_that_leaves_early_stops_check_quietly` |
-| M47 | last character of each block dropped | `test_scale.py::test_a_long_text_folds_like_its_characters` |
-| M48 | form names read case-insensitively | `test_cli_io.py::test_form_names_are_case_sensitive[ASCII]` |
-| M49 | invalid form echoed whole | `test_cli_edges.py::test_a_huge_form_value_is_quoted_short` |
-| M50 | BOM stripped from stdin | `test_cli_io.py::test_a_bom_on_stdin_is_kept[args0]` |
-| M51 | non UTF-8 file accepted | `test_cli_io.py::test_a_file_that_is_not_utf8_is_an_error_and_others_still_run` |
-| M52 | text of one block or less left unfolded | `__init__.py::unidash` |
+- First round, 37 mutants of the library and the CLI at c76b0e7: all killed.
+- Second round, 15 mutants of the QA round 1 and 2 fixes at d9dc54f: all killed.
+- Third round, mutants of the QA round 3 fixes: RESULT3.
 
 ## Packaging, e2e and Pythons (items 8, 10, 13, 14)
 
@@ -226,9 +171,24 @@ finding. The other lenses' findings, all fixed in 4d98934 and d9dc54f:
 | With stderr closed, `print(file=None)` wrote diagnostics into the folded output or the `--check` report | `_report` and the parser drop them when `sys.stderr` is None | `test_cli_io.py`: in process and a real child with stderr closed write only data (M38, M41) |
 | A usage error naming a huge unknown option echoed it whole | usage errors cut at 200 characters | `test_a_huge_unknown_argument_is_cut_short` (M39, M40) |
 | markdown-it-py reads `--` as an en dash only with whitespace on both sides or on neither; the docs claimed exact read-back | README and GUIDE state the exception; the oracle texts pick the space on each side apart | oracle test expects hyphens for lopsided en dashes (over 50 cases), plus a direct test |
-| Mutants surviving the suite: CLI writing only the first block or stopping after it, forms in any case, non UTF-8 replaced, stdin BOM lost, any write error swallowed | new CLI contracts in `tests/test_cli_io.py` | the second author round above kills each of these shapes |
+| Mutants surviving the suite: CLI writing only the first block or stopping after it, forms in any case, non UTF-8 replaced, stdin BOM lost, any write error swallowed | new CLI contracts in `tests/test_cli_io.py` | the second author round kills each of these shapes |
 | The close-early test passed 300 full temporary paths, near the Windows command line limit | bare names with the folder as cwd | test unchanged in intent |
 | The linear time test could fail on a loaded machine | sizes of 200,000 and 1,600,000 characters, bound 40 (linear about 8, quadratic 64) | steady on the final runs |
 | GUIDE silent on other write errors and on case in form names | a full disk raises with a traceback; form names are exact | M45, M48 |
 
-Disputed findings: none. Next: the five lenses on d9dc54f, then the independent review.
+Round 3, on 6fa3a04: every lens returned at least one finding. All are fixed in 931adf3 and
+d027888, each behaviour bug with a contract test that failed on 6fa3a04 first; the behaviour
+changes are in the CHANGELOG. No finding is disputed.
+
+| Finding | Fix | Proof |
+| --- | --- | --- |
+| a-F1, d-D1, e-F1 (high, high, medium): `pytest` red at 6fa3a04, this report had 234 lines and its gate runs were of d9dc54f | mutation tables moved to CERT-1.0-MUTATIONS.md (also excluded from the sdist); gates and matrix rerun on the round 3 code and recorded below | `test_every_source_file_stays_under_two_hundred_lines` passes |
+| a-F2 (low): `DashHit` fields annotated with `ForwardRef('int')` at runtime | no `__future__` import in `_hit.py` | `test_contract.py::test_dash_hit_fields_carry_their_real_types` (failed before) |
+| a-F3 (low): `--punct --form ascii` accepted, exit 0 | `--form` defaults to None, so any explicit `--form` is refused with `--punct` | `test_cli_names.py::test_punct_refuses_any_explicit_form` (`ascii` failed before) |
+| b-F1 (low): the `tex` read-back promise covered "any other character" | README and GUIDE promise letters, digits, spaces and `. , ; : ? ! ( )`, and name the backslash escape, the markdown-it-py `+-` rule and code spans | oracle texts now mix CJK, accented words and that punctuation around the dashes (over 50 texts with a dash touching it); each named exception pinned by a test |
+| c2-F1 (medium): `--check` crashes when a Windows file name holds a lone surrogate | report names written with surrogateescape, else backslash escapes; reading errors include `ValueError`, so a name POSIX cannot encode is an unreadable file | in process and by subprocess on Windows (both failed before), plus a missing such name in both modes |
+| c2-F2 (low): a huge file name echoed twice in a read error | only the system's reason is printed, and a name over 200 characters keeps its first and last 100 | 30,000-character name: under 500 bytes of stderr; names of 200 and 201 characters (failed before) |
+| e-F2 (low): mutant N07, U+2028 ends a line, survives | test of VT, FF, U+001C to U+001E, U+0085, U+2028 and U+2029 before a dash; the fuzz pool gains five of them | N07 applied: the new test and all three fuzz seeds fail |
+| e-F3 (low): mutant N13, `>=` at the usage error limit, survives | messages of 199, 200 and 201 characters through the parser's `error` | N13 applied: the 200 case fails |
+
+Disputed findings: none. Next: the five lenses on the round 3 code, then the independent review.
