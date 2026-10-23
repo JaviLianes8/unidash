@@ -123,6 +123,20 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     assert broken.returncode == 2
     assert broken.stdout == b""
     assert broken.stderr.decode().startswith("unidash: <stdin>: ")
+    (work / "big.txt").write_bytes(("x" + chr(0x2014) + chr(10)).encode() * 400_000)
+    for args in (["--check", "big.txt"], ["--form", "tex", *["big.txt"] * 5]):
+        assert _close_early([str(script), *args], work) == (1, b"")
+
+
+def _close_early(cmd: list[str], cwd: Path) -> tuple[int, bytes]:
+    # The reader takes a little output, then goes away, like ``unidash big.txt | head``.
+    process = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    assert process.stdout is not None and process.stderr is not None
+    assert process.stdout.read(64)
+    process.stdout.close()
+    errors = process.stderr.read()
+    process.stderr.close()
+    return process.wait(timeout=120), errors
 
 
 def _pyproject_version() -> str:

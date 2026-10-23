@@ -34,11 +34,17 @@ subscript minus are never changed.
 
 The fold works one code point at a time, so it is idempotent (folding twice gives the same
 result as folding once) and folding pieces of a text gives the pieces of the folded text.
+Time is linear in the length of the text, also when most characters grow (the `tex` widths).
 
 The `tex` form follows the TeX and Markdown convention, so it is one way only where dashes
 touch: an en dash followed by an ASCII hyphen gives `---`, which a converter reads as an em
-dash. Dashes separated by any other character read back exactly; the tests check this with
-smartypants, Python-Markdown, markdown-it-py and docutils.
+dash. En and em dashes separated by any other character read back exactly through
+Python-Markdown (`smarty`), the markdown-it-py typographer, docutils, and smartypants with
+old-school dashes (`smartypants.Attr.D`; by default smartypants reads `--` as an em dash); the
+tests check this. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an
+em dash and U+FE32 as an en dash. Only docutils and smartypants read the 6 and 9 hyphens of
+U+2E3A and U+2E3B as two and three em dashes; Python-Markdown and markdown-it-py leave them
+as hyphens.
 
 ## `iter_fold_dashes(chunks, form="ascii", *, ...)`
 
@@ -92,8 +98,9 @@ Folds the typographic punctuation of a text to ASCII in one pass:
 - fullwidth punctuation U+FF01 to U+FF5E to its ASCII character, except fullwidth letters
   and digits, which are letters and digits.
 
-Letters, marks and digits of every script are never changed; the tests check every code
-point of the interpreter's Unicode data.
+Every other character comes out as `fold_dashes(text)` leaves it, so letters, marks and
+digits of every script are never changed; the tests check every code point against this
+list.
 
 ## Errors
 
@@ -115,13 +122,14 @@ The double hyphens (U+2E40, and U+1400 and U+30A0 among the script hyphens) beco
 although UTS #39 lists them as confusable with `=`: they are hyphens in use, and `=` would
 change the meaning of the text.
 
-Characters that only look like a hyphen are left alone: letters in other scripts, U+06D4
-ARABIC FULL STOP (it ends a sentence), U+2043 HYPHEN BULLET (`to_ascii_punct` makes it a
-`*`), U+02D7 MODIFIER LETTER MINUS SIGN (a tone mark), U+10191 ROMAN UNCIA SIGN (a weight
-unit), and minus-like symbols without the Dash property: U+2052 COMMERCIAL MINUS SIGN,
-U+2796 HEAVY MINUS SIGN (an emoji), U+2E43 DASH WITH LEFT UPTURN and U+10D8F GARAY MINUS
-SIGN. The tests check that every UTS #39 confusable of `-` either folds or is in this list
-or is a letter.
+Characters that only look like a hyphen are left alone: letters and marks in other scripts
+(such as the spacing marks U+1BF3 BATAK PANONGONAN and U+AA7D MYANMAR SIGN TAI LAING
+TONE-5), U+06D4 ARABIC FULL STOP (it ends a sentence), U+2043 HYPHEN BULLET
+(`to_ascii_punct` makes it a `*`), U+02D7 MODIFIER LETTER MINUS SIGN (a tone mark), U+10191
+ROMAN UNCIA SIGN (a weight unit), and minus-like symbols without the Dash property: U+2052
+COMMERCIAL MINUS SIGN, U+2796 HEAVY MINUS SIGN (an emoji), U+2E43 DASH WITH LEFT UPTURN and
+U+10D8F GARAY MINUS SIGN. The tests check that every UTS #39 confusable of `-` either folds
+or is in this list or is a letter or a mark.
 
 ## Command line
 
@@ -135,10 +143,15 @@ unidash [--form {ascii,tex,typographic}] [--script-hyphens] [--keep-soft-hyphens
 - `--punct` uses `to_ascii_punct` and cannot be combined with the dash options.
 - `--check` writes nothing but `FILE:LINE:COLUMN: U+XXXX NAME` for each change, with the
   positions of `find_dashes`.
+- Stdin is read only for `-`. With no standard input, `-` is reported as an unreadable
+  file; with no standard output the tool stops at once with exit 2.
+- An invalid `--form` value is quoted to at most 40 characters in the usage error.
+- Long input takes linear time.
 - Exit codes: 0 when nothing failed (and, with `--check`, nothing would change); 1 when
-  `--check` found something or stdout was closed early (`unidash big.txt | head`); 2 for a
-  file that cannot be read or is not UTF-8 (the other files are still processed) and for
-  usage errors, such as reading stdin twice.
+  `--check` found something or the reader closed stdout early (`unidash big.txt | head`),
+  quietly, on every platform; 2 for a file that cannot be read or is not UTF-8 (the other
+  files are still processed), for a missing standard input or output, and for usage
+  errors, such as reading stdin twice.
 - `python -m unidash` runs the same tool.
 
 ## Threads

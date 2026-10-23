@@ -103,9 +103,9 @@ def test_every_confusable_of_hyphen_minus_folds_or_is_excluded() -> None:
     sources = {cp for cp, target in _confusables().items() if target == "-"}
     assert len(sources) >= 10
     left = {cp for cp in sources if fold_dashes(chr(cp)) != "-"}
-    letters = {cp for cp in left if data[cp][1][0] in "LM"}
-    assert letters
-    assert left - letters == set(NOT_DASHES)
+    letters_and_marks = {cp for cp in left if data[cp][1][0] in "LM"}
+    assert {0x1BF3, 0xAA7D} <= letters_and_marks  # spacing marks, named in the GUIDE
+    assert left - letters_and_marks == set(NOT_DASHES)
 
 
 def test_ascii_targets_agree_with_the_confusables() -> None:

@@ -7,7 +7,7 @@ from collections.abc import Iterable, Iterator
 from ._checks import checked_table, require_text
 from ._classes import DASH_CODEPOINTS
 from ._hit import DashHit, scan
-from ._tables import Form
+from ._tables import Form, translate
 
 DASHES: frozenset[str] = frozenset(chr(cp) for cp in DASH_CODEPOINTS)
 
@@ -40,7 +40,7 @@ def fold_dashes(
     'coop'
     """
     table = checked_table(form, script_hyphens, keep_soft_hyphens)
-    return require_text(text).translate(table)
+    return translate(require_text(text), table)
 
 
 def iter_fold_dashes(
@@ -60,7 +60,7 @@ def iter_fold_dashes(
     ['a--', '---b']
     """
     table = checked_table(form, script_hyphens, keep_soft_hyphens)
-    return (require_text(chunk, "chunk").translate(table) for chunk in chunks)
+    return (translate(require_text(chunk, "chunk"), table) for chunk in chunks)
 
 
 def is_dash(char: str) -> bool:

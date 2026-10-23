@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import sys
+
 import pytest
 
-from unidash import to_ascii_punct
+from unidash import fold_dashes, to_ascii_punct
 
 LSQUO, RSQUO = chr(0x2018), chr(0x2019)
 LDQUO, RDQUO = chr(0x201C), chr(0x201D)
@@ -128,3 +130,30 @@ def test_fullwidth_punctuation_folds_to_its_nfkc_ascii_form() -> None:
 
 def test_japanese_wave_dash_from_cp932_becomes_tilde() -> None:
     assert to_ascii_punct("1" + chr(0xFF5E) + "9") == "1~9"
+
+
+def _documented_targets() -> dict[int, str]:
+    # Written out from the GUIDE list, not from the library's own table.
+    targets = dict.fromkeys((0x2018, 0x2019, 0x201A, 0x201B, 0x2032, 0x2035), "'")
+    targets.update(dict.fromkeys((0x201C, 0x201D, 0x201E, 0x201F, 0x2033, 0x2036), '"'))
+    targets.update(dict.fromkeys((0x2022, 0x2023, 0x2043, 0x2219, 0x25E6), "*"))
+    spaces = (0x00A0, 0x1680, *range(0x2000, 0x200B), 0x202F, 0x205F, 0x3000)
+    targets.update(dict.fromkeys(spaces, " "))
+    targets[0x2026] = "..."
+    for codepoint in range(0xFF01, 0xFF5F):
+        ascii_char = chr(codepoint - 0xFEE0)
+        if not ascii_char.isalnum():
+            targets[codepoint] = ascii_char
+    return targets
+
+
+def test_every_code_point_folds_exactly_as_documented() -> None:
+    # Pins the whole table: a character added to or dropped from a group fails here.
+    targets = _documented_targets()
+    wrong = {}
+    for codepoint in range(sys.maxunicode + 1):
+        char = chr(codepoint)
+        expected = targets.get(codepoint, fold_dashes(char))
+        if to_ascii_punct(char) != expected:
+            wrong[hex(codepoint)] = to_ascii_punct(char)
+    assert wrong == {}

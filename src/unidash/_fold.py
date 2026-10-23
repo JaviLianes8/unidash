@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ._checks import require_text
 from ._mapping import PUNCTUATION_TABLE
+from ._tables import translate
 
 
 def to_ascii_punct(text: str) -> str:
@@ -20,4 +21,4 @@ def to_ascii_punct(text: str) -> str:
     >>> to_ascii_punct("\uff081\uff09\u301c caf\u00e9") == "(1)~ caf\u00e9"
     True
     """
-    return require_text(text).translate(PUNCTUATION_TABLE)
+    return translate(require_text(text), PUNCTUATION_TABLE)

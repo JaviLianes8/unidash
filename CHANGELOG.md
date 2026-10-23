@@ -8,10 +8,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [1.0.0] - 2026-10-23
 
-The public API is now stable: the nine names in `unidash.__all__`, their parameter names,
-defaults, results and error types are kept for every 1.x release. The dash classification
-follows Unicode 18.0; a later Unicode version that adds dashes is taken in a minor release
-and never moves a character that is already classified.
+The first release published on PyPI; 0.1.0 and 0.2.0 were development versions. The public
+API is now stable: the nine names in `unidash.__all__`, their parameter names, defaults,
+results and error types are kept for every 1.x release. The dash classification follows
+Unicode 18.0; a later Unicode version that adds dashes is taken in a minor release and never
+moves a character that is already classified.
 
 ### Changed
 
@@ -27,13 +28,28 @@ and never moves a character that is already classified.
 - `is_dash` says how many characters it was given (`not 2 characters`).
 - `DashHit` reports and pickles as `unidash.DashHit`, not as a private module.
 - `python -m unidash` no longer runs the tool when the module is only imported.
+- The command line reads stdin only for `-`, so files are processed when there is no
+  standard input. A missing stdin (for `-`) or stdout is reported on stderr with exit 2
+  instead of a traceback.
+- An invalid `--form` value is quoted to at most 40 characters in the usage error.
+
+### Fixed
+
+- `fold_dashes` and `iter_fold_dashes` with the `tex` form, `to_ascii_punct` and the command
+  line take linear time on long text where most characters grow (the two-em and three-em
+  dashes, the ellipsis); they were quadratic.
+- On Windows, the command line stops quietly with exit 1 when the reader closes stdout early
+  (`unidash --check big.txt | head`), as it already did elsewhere, instead of printing a
+  traceback and exiting 120.
 
 ### Added
 
 - Runnable examples in the docstring of every public name, run as doctests.
 - A guide (GUIDE.md) with the full contract of each function and the versioning promise.
 
-## [0.2.0]
+## [0.2.0] - 2026-10-13
+
+Development version, not published to PyPI.
 
 ### Added
 
@@ -58,9 +74,10 @@ and never moves a character that is already classified.
 - `to_ascii_punct` folds fullwidth punctuation (U+FF01 to U+FF5E, not letters or digits) to
   ASCII, so the Japanese wave dash from CP932 text (U+FF5E) becomes `~`.
 
-## [0.1.0]
+## [0.1.0] - 2026-10-12
 
-- First release.
+Development version, not published to PyPI.
+
 - `to_ascii_punct(text)` folds Unicode punctuation to ASCII: curly quotes to `'` and `"`,
   en and em dashes and the minus sign to `-`, the ellipsis to `...`, non-breaking and
   other spaces to a normal space, and bullets to `*`.

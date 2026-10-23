@@ -82,6 +82,20 @@ def test_converters_read_the_tex_form_back_as_the_original_dashes(
             assert oracle(fold_dashes(text, "tex")) == text, ascii(text)
 
 
+@pytest.mark.parametrize("oracle", [_python_markdown, _markdown_it, _docutils, _smartypants])
+def test_the_other_short_dashes_read_back_as_en_or_em_dashes(
+    oracle: Callable[[str], str],
+) -> None:
+    # Many to one, as the GUIDE says: the bar and the compatibility forms lose their identity.
+    for codepoint, dash in ((0x2015, EM), (0xFE31, EM), (0xFE58, EM), (0xFE32, EN)):
+        assert oracle("a " + fold_dashes(chr(codepoint), "tex") + " b") == "a " + dash + " b"
+
+
+def test_smartypants_needs_old_school_dashes() -> None:
+    smartypants = pytest.importorskip("smartypants")
+    assert html.unescape(smartypants.smartypants("a -- b")) == "a " + EM + " b"
+
+
 @pytest.mark.parametrize("oracle", [_docutils, _smartypants])
 def test_converters_read_long_dashes_as_em_dashes(oracle: Callable[[str], str]) -> None:
     # The two-em and three-em dashes are as long as two and three em dashes.

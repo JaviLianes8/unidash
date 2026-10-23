@@ -160,8 +160,8 @@ U+10D6E GARAY HYPHEN and U+10EAD YEZIDI HYPHENATION MARK.
 
 Never folded: U+002D HYPHEN-MINUS, and U+207B SUPERSCRIPT MINUS and U+208B SUBSCRIPT MINUS,
 which sit next to superscript and subscript digits that stay as they are. Characters that
-only look like a hyphen (letters, the hyphen bullet, minus-like symbols without the Dash
-property) are left alone; the guide lists them with the reason for each.
+only look like a hyphen (letters and marks of other scripts, the hyphen bullet, minus-like
+symbols without the Dash property) are left alone; the guide gives the reason for each.
 
 ## Why
 
@@ -175,11 +175,11 @@ fullwidth and vertical dash forms, but leaves the en dash, the em dash and the m
 they are, and it changes letters and digits too (the `fi` ligature becomes `fi`, a
 superscript two becomes `2`).
 
-Typography converters (`smartypants`, Python-Markdown's `smarty`, the markdown-it-py
-typographer, docutils) go the other way, `--` and `---` to en and em dashes; the `tex` form
-writes exactly what all four read back, and the tests check it. `unidash` folds only
-punctuation, puts every Dash character in a documented class, leaves letters alone, has no
-dependencies and is fully typed.
+Typography converters (Python-Markdown's `smarty`, the markdown-it-py typographer, docutils, and
+`smartypants` with old-school dashes, `Attr.D`; by default it reads `--` as an em dash) turn `--`
+and `---` into en and em dashes. En and em dashes in the `tex` form read back exactly through all
+four, as the tests check; the guide covers the rarer dashes. `unidash` folds only punctuation,
+classifies every Dash character, leaves letters alone, has no dependencies and is fully typed.
 
 ## Development
 
