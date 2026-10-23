@@ -48,12 +48,19 @@ punctuation and the spaces on each side chosen apart. Other neighbours can be ma
 backslash right before a dash escapes its first hyphen in Python-Markdown, markdown-it-py and
 smartypants (`a\---b` reads back as a hyphen and an en dash), markdown-it-py turns a `+`
 right before a dash into `±`, and Python-Markdown and markdown-it-py leave the hyphens inside
-code spans as written. Their block rules apply too: a line indented four spaces (or a tab) is
-a code block, whose hyphens stay as written, and a line of only dashes and spaces that folds
-to three hyphens or more (any em dash does) is a thematic break, `<hr />`. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an
-em dash and U+FE32 as an en dash. Only docutils and smartypants read the 6 and 9 hyphens of
-U+2E3A and U+2E3B as two and three em dashes; Python-Markdown and markdown-it-py leave them
-as hyphens.
+code spans as written. Their block rules apply too, and they depend on the line before. A
+line that starts the text or follows a blank line is a code block, whose hyphens stay as
+written, when it is indented four spaces (or a tab), and a thematic break, `<hr />`, when it
+holds only dashes and spaces that fold to three hyphens or more (any em dash does); in
+Python-Markdown only while no two of its dashes are three or more spaces apart, otherwise it
+reads back as text. Right under a line of text, an indented line continues that paragraph
+instead, and a line of touching dashes, even a single en dash, is a heading underline: the
+text above becomes `<h2>` and the dashes are lost (markdown-it-py also allows up to three
+spaces before them, Python-Markdown none). Other lines of dashes and spaces there follow the
+thematic break rule. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back
+as an em dash and U+FE32 as an en dash. Only docutils and smartypants read the 6 and 9
+hyphens of U+2E3A and U+2E3B as two and three em dashes; Python-Markdown and markdown-it-py
+leave them as hyphens.
 
 ## `iter_fold_dashes(chunks, form="ascii", *, ...)`
 
