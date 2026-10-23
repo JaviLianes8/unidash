@@ -31,7 +31,11 @@ moves a character that is already classified.
 - The command line reads stdin only for `-`, so files are processed when there is no
   standard input. A missing stdin (for `-`) or stdout is reported on stderr with exit 2
   instead of a traceback.
-- An invalid `--form` value is quoted to at most 40 characters in the usage error.
+- An invalid `--form` value is quoted to at most 40 characters in the usage error, and any
+  usage error message longer than 200 characters (such as one naming a huge unknown option)
+  is cut there.
+- With no standard error, the command line drops its diagnostics instead of writing them
+  into the folded output or the `--check` report.
 
 ### Fixed
 

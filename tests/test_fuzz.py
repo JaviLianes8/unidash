@@ -143,7 +143,9 @@ def _best_time(function: Callable[[], object]) -> float:
     [chr(0x2014), SOFT, CR, CR + LF, "a", chr(0x2014) + LF, chr(0x5BE) + SOFT + chr(0x2E3B)],
 )
 def test_large_input_takes_linear_time(shape: str) -> None:
-    small, large = shape * (50_000 // len(shape)), shape * (400_000 // len(shape))
+    # Both sizes span several translate blocks, so the small side takes the same path as the
+    # large one and its time is far above timer noise.
+    small, large = shape * (200_000 // len(shape)), shape * (1_600_000 // len(shape))
     works: list[Callable[[str], object]] = [
         lambda text: fold_dashes(text, "tex", script_hyphens=True),
         to_ascii_punct,
@@ -151,7 +153,9 @@ def test_large_input_takes_linear_time(shape: str) -> None:
     ]
     for work in works:
         ratio = _ratio(work, small, large)
-        assert ratio < 24, (ascii(shape), ratio)  # eight times the input; linear is about 8
+        # Eight times the input: linear is about 8 (up to 17 seen for ASCII), quadratic 64;
+        # the bound sits between them so a loaded machine does not fail it.
+        assert ratio < 40, (ascii(shape), ratio)
 
 
 def _ratio(work: Callable[[str], object], small: str, large: str) -> float:

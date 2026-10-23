@@ -8,7 +8,7 @@ import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, NoReturn
 
 from ._checks import quote
 from ._hit import scan
@@ -16,6 +16,25 @@ from ._mapping import PUNCTUATION_TABLE
 from ._tables import FORMS, Table, cached_table, translate_blocks
 
 _STDIN = "-"
+# Usage errors may hold whatever the caller typed; past this many characters they are cut.
+MESSAGE_LIMIT = 200
+
+
+def _report(message: str) -> None:
+    # With stderr closed Python sets sys.stderr to None, and print would then write to stdout,
+    # into the folded data. The message is dropped instead.
+    if sys.stderr is not None:
+        print(message, file=sys.stderr)
+
+
+class _Parser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        if len(message) > MESSAGE_LIMIT:
+            message = f"{message[:MESSAGE_LIMIT]}... ({len(message)} characters)"
+        if sys.stderr is None:
+            self.exit(2)
+        self.print_usage(sys.stderr)
+        self.exit(2, f"{self.prog}: error: {message}\n")
 
 
 def _form(value: str) -> str:
@@ -29,7 +48,7 @@ def _form(value: str) -> str:
 def _parser() -> argparse.ArgumentParser:
     from . import __version__
 
-    parser = argparse.ArgumentParser(
+    parser = _Parser(
         prog="unidash",
         description="Fold Unicode dashes to ASCII or tidy typographic dashes. Reads UTF-8.",
     )
@@ -79,7 +98,7 @@ def _run(args: argparse.Namespace, table: Table, names: list[str], stdout: Binar
         try:
             text = _read(name)
         except (OSError, UnicodeDecodeError) as error:
-            print(f"unidash: {label}: {error}", file=sys.stderr)
+            _report(f"unidash: {label}: {error}")
             status = 2
             continue
         if not args.check:
@@ -105,7 +124,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("stdin (-) can be read only once")
     stdout = getattr(sys.stdout, "buffer", None)
     if stdout is None:
-        print("unidash: no standard output", file=sys.stderr)
+        _report("unidash: no standard output")
         return 2
     try:
         return _run(args, table, names, stdout)

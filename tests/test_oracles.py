@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import html
 import random
+import re
 import sys
 from collections.abc import Callable
 
@@ -37,15 +38,15 @@ def test_regex_pd_category_is_classified() -> None:
 
 
 def _texts(seed: int, count: int = 300) -> list[str]:
-    # Words joined by single en or em dashes, with or without spaces around them. Adjacent
-    # dashes are left out: in the TeX convention "-----" has no single reading.
+    # Words joined by single en or em dashes, with or without a space on each side, chosen
+    # apart. Adjacent dashes are left out: in the TeX convention "-----" has no single reading.
     rng = random.Random(seed)
     texts = []
     for _ in range(count):
         parts = [rng.choice(WORDS)]
         for _ in range(rng.randrange(1, 6)):
-            space = rng.choice(["", " "])
-            parts += [space + rng.choice([EN, EM, " "]) + space, rng.choice(WORDS)]
+            dash = rng.choice(["", " "]) + rng.choice([EN, EM, " "]) + rng.choice(["", " "])
+            parts += [dash, rng.choice(WORDS)]
         texts.append("".join(parts))
     return texts
 
@@ -73,13 +74,39 @@ def _smartypants(text: str) -> str:
     return html.unescape(smartypants.smartypants(text, smartypants.Attr.D))
 
 
-@pytest.mark.parametrize("oracle", [_python_markdown, _markdown_it, _docutils, _smartypants])
+# markdown-it-py reads "--" as an en dash only with whitespace on both sides or on neither.
+LOPSIDED_EN = re.compile(rf"(?<=\s){EN}(?=\S)|(?<=\S){EN}(?=\s)")
+
+
+def _as_written(text: str) -> str:
+    return text
+
+
+def _lopsided_en_dashes_stay_hyphens(text: str) -> str:
+    return LOPSIDED_EN.sub("--", text)
+
+
+@pytest.mark.parametrize(
+    ("oracle", "expected"),
+    [
+        (_python_markdown, _as_written),
+        (_markdown_it, _lopsided_en_dashes_stay_hyphens),
+        (_docutils, _as_written),
+        (_smartypants, _as_written),
+    ],
+)
 def test_converters_read_the_tex_form_back_as_the_original_dashes(
-    oracle: Callable[[str], str],
+    oracle: Callable[[str], str], expected: Callable[[str], str]
 ) -> None:
-    for seed in (1, 2):
-        for text in _texts(seed):
-            assert oracle(fold_dashes(text, "tex")) == text, ascii(text)
+    texts = _texts(1) + _texts(2)
+    assert sum(1 for text in texts if LOPSIDED_EN.search(text)) > 50
+    for text in texts:
+        assert oracle(fold_dashes(text, "tex")) == expected(text), ascii(text)
+
+
+def test_markdown_it_leaves_an_en_dash_spaced_on_one_side_as_hyphens() -> None:
+    for text in ("pages 10 " + EN + "20", "a" + EN + " b"):
+        assert _markdown_it(fold_dashes(text, "tex")) == text.replace(EN, "--")
 
 
 @pytest.mark.parametrize("oracle", [_python_markdown, _markdown_it, _docutils, _smartypants])

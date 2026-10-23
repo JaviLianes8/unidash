@@ -25,11 +25,12 @@ def _env() -> dict[str, str]:
     return env
 
 
-def _close_early(args: list[str]) -> tuple[int, bytes]:
+def _close_early(args: list[str], cwd: Path) -> tuple[int, bytes]:
     process = subprocess.Popen(
         [sys.executable, "-m", "unidash", *args],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        cwd=cwd,
         env=_env(),
     )
     assert process.stdout is not None and process.stderr is not None
@@ -43,13 +44,14 @@ def _close_early(args: list[str]) -> tuple[int, bytes]:
 def test_a_reader_that_leaves_early_stops_check_quietly(tmp_path: Path) -> None:
     big = tmp_path / "big.txt"
     big.write_bytes(("line " + EM + " x\n").encode() * 400_000)
-    assert _close_early(["--check", str(big)]) == (1, b"")
+    assert _close_early(["--check", big.name], tmp_path) == (1, b"")
 
 
 def test_a_reader_that_leaves_early_stops_the_fold_quietly(tmp_path: Path) -> None:
     part = tmp_path / "part.txt"
     part.write_bytes(("x" + EM + "\n").encode() * 3000)
-    assert _close_early([str(part)] * 300) == (1, b"")
+    # Bare names: 300 full temporary paths could pass the Windows command line limit.
+    assert _close_early([part.name] * 300, tmp_path) == (1, b"")
 
 
 class Streams:

@@ -39,9 +39,12 @@ Time is linear in the length of the text, also when most characters grow (the `t
 The `tex` form follows the TeX and Markdown convention, so it is one way only where dashes
 touch: an en dash followed by an ASCII hyphen gives `---`, which a converter reads as an em
 dash. En and em dashes separated by any other character read back exactly through
-Python-Markdown (`smarty`), the markdown-it-py typographer, docutils, and smartypants with
-old-school dashes (`smartypants.Attr.D`; by default smartypants reads `--` as an em dash); the
-tests check this. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an
+Python-Markdown (`smarty`), docutils, and smartypants with old-school dashes
+(`smartypants.Attr.D`; by default smartypants reads `--` as an em dash), and through the
+markdown-it-py typographer with one exception: it reads `--` as an en dash only with
+whitespace on both sides or on neither, so an en dash with a space on one side only
+(`10 --20`) stays two hyphens there. The tests check all four, spaces on each side chosen
+apart. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an
 em dash and U+FE32 as an en dash. Only docutils and smartypants read the 6 and 9 hyphens of
 U+2E3A and U+2E3B as two and three em dashes; Python-Markdown and markdown-it-py leave them
 as hyphens.
@@ -145,13 +148,18 @@ unidash [--form {ascii,tex,typographic}] [--script-hyphens] [--keep-soft-hyphens
   positions of `find_dashes`.
 - Stdin is read only for `-`. With no standard input, `-` is reported as an unreadable
   file; with no standard output the tool stops at once with exit 2.
-- An invalid `--form` value is quoted to at most 40 characters in the usage error.
+- An invalid `--form` value is quoted to at most 40 characters in the usage error, and the
+  form names are exact (`ASCII` is an error). Any usage error message longer than 200
+  characters, such as one naming a huge unknown option, is cut there.
+- Diagnostics go only to stderr. With no standard error they are dropped, never written
+  into the output.
 - Long input takes linear time.
 - Exit codes: 0 when nothing failed (and, with `--check`, nothing would change); 1 when
   `--check` found something or the reader closed stdout early (`unidash big.txt | head`),
   quietly, on every platform; 2 for a file that cannot be read or is not UTF-8 (the other
   files are still processed), for a missing standard input or output, and for usage
-  errors, such as reading stdin twice.
+  errors, such as reading stdin twice. Any other error writing the output, such as a full
+  disk, is not caught: Python reports it with a traceback.
 - `python -m unidash` runs the same tool.
 
 ## Threads
