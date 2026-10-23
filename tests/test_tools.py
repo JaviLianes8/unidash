@@ -8,7 +8,7 @@ import unicodedata
 
 import pytest
 
-import unidash._dashes
+import unidash._hit
 from unidash import (
     DASHES,
     DashHit,
@@ -21,7 +21,7 @@ from unidash import (
     to_ascii_punct,
 )
 from unidash._classes import COMPATIBILITY, GENERAL, KEPT, SCRIPT_HYPHENS
-from unidash._dashes import scan
+from unidash._hit import scan
 
 EM, EN, SOFT, MAQAF = chr(0x2014), chr(0x2013), chr(0xAD), chr(0x5BE)
 FORMS: tuple[Form, ...] = ("ascii", "tex", "typographic")
@@ -48,7 +48,7 @@ def test_find_names_do_not_depend_on_the_interpreter_tables(
         def name(char: str, default: str) -> str:
             return default
 
-    monkeypatch.setattr(unidash._dashes, "unicodedata", NoNames)
+    monkeypatch.setattr(unidash._hit, "unicodedata", NoNames)
     (hit,) = find_dashes(chr(0x10EAD), script_hyphens=True)
     assert (hit.name, hit.codepoint) == ("YEZIDI HYPHENATION MARK", "U+10EAD")
     (unknown,) = scan("a" + chr(0x378), {0x378: "x"})

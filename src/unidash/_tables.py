@@ -20,19 +20,9 @@ FORMS: tuple[str, ...] = get_args(Form)
 Table = dict[int, str | None]
 
 
-def check_options(form: object, script_hyphens: object, keep_soft_hyphens: object) -> None:
-    if not isinstance(form, str) or form not in FORMS:
-        raise ValueError(f"form must be one of {', '.join(FORMS)}, not {form!r}")
-    for label, flag in (
-        ("script_hyphens", script_hyphens),
-        ("keep_soft_hyphens", keep_soft_hyphens),
-    ):
-        if not isinstance(flag, bool):
-            raise TypeError(f"{label} must be a bool, not {type(flag).__name__}")
-
-
 @cache
 def cached_table(form: str, script_hyphens: bool, keep_soft_hyphens: bool) -> Table:
+    # Callers pass checked, exact values only, so the cache holds at most twelve tables.
     table: Table
     if form == "typographic":
         table = dict(COMPATIBILITY.items())
@@ -47,11 +37,3 @@ def cached_table(form: str, script_hyphens: bool, keep_soft_hyphens: bool) -> Ta
     if not keep_soft_hyphens:
         table[SOFT_HYPHEN] = None
     return table
-
-
-def dash_table(
-    form: Form = "ascii", *, script_hyphens: bool = False, keep_soft_hyphens: bool = False
-) -> dict[int, str | None]:
-    """Return a fresh ``str.translate`` table for ``form``; ``None`` values delete."""
-    check_options(form, script_hyphens, keep_soft_hyphens)
-    return dict(cached_table(form, script_hyphens, keep_soft_hyphens))

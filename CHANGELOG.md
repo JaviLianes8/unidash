@@ -6,6 +6,33 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-23
+
+The public API is now stable: the nine names in `unidash.__all__`, their parameter names,
+defaults, results and error types are kept for every 1.x release. The dash classification
+follows Unicode 18.0; a later Unicode version that adds dashes is taken in a minor release
+and never moves a character that is already classified.
+
+### Changed
+
+- A `form` that is not a str now raises `TypeError` (`form must be a str, not list`); an
+  unknown str still raises `ValueError`.
+- Error messages quote at most 40 characters of the value passed, so a huge `form` string
+  no longer ends up whole in the message.
+- A `str` subclass is read as its plain characters: an overridden `translate` or `__iter__`
+  can no longer change what `fold_dashes`, `find_dashes`, `iter_fold_dashes`, `is_dash` or
+  `to_ascii_punct` return, and a subclass whose `__eq__` matches anything is no longer
+  taken for a valid form.
+- A non-str chunk in `iter_fold_dashes` is reported as `chunk must be a str`.
+- `is_dash` says how many characters it was given (`not 2 characters`).
+- `DashHit` reports and pickles as `unidash.DashHit`, not as a private module.
+- `python -m unidash` no longer runs the tool when the module is only imported.
+
+### Added
+
+- Runnable examples in the docstring of every public name, run as doctests.
+- A guide (GUIDE.md) with the full contract of each function and the versioning promise.
+
 ## [0.2.0]
 
 ### Added

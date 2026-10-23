@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import BinaryIO
 
-from ._dashes import scan
+from ._hit import scan
 from ._mapping import PUNCTUATION_TABLE
 from ._tables import FORMS, Table, cached_table
 
