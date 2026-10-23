@@ -18,7 +18,7 @@ Progress:
 - [x] QA rounds 1 and 2: every finding fixed
 - [x] Second author mutation round on the fix code, final matrix and gates at d9dc54f
 - [x] QA round 3 (five lenses on 6fa3a04): every finding fixed
-- [ ] Third mutation round, matrix and gates on the round 3 code
+- [x] Third mutation round, matrix and gates on the round 3 code (6b342cc)
 - [ ] Five QA lenses passing on the final code (item 19)
 - [ ] Independent reviewer (item 16)
 
@@ -35,12 +35,12 @@ Progress:
 | 7 | Real ground truth | PASS: Unicode 18.0 files fetched 2026-10-23, regex, four typography converters |
 | 8 | Real e2e from the wheel | PASS: wheel in a fresh venv, API and CLI by subprocess; no PyPI release to upgrade from |
 | 9 | Seeded fuzz, no crash, hang or blowup | PASS: `tests/test_fuzz.py`; linear on growing input since QA round 1 (`tests/test_scale.py`) |
-| 10 | Supported Pythons | PASS: CPython 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2, 3.14.2t, at d9dc54f |
+| 10 | Supported Pythons | PASS: CPython 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2, 3.14.2t, at 6b342cc |
 | 11 | README and `twine check` | PASS: `twine check --strict` on wheel and sdist, absolute links |
 | 12 | Dated CHANGELOG section | PASS: 1.0.0, 2026-10-23 |
 | 13 | pyproject 1.0.0, Production/Stable | PASS |
 | 14 | sdist and wheel contents | PASS |
-| 15 | Gates each exit 0 | PASS: at d9dc54f, see Gates |
+| 15 | Gates each exit 0 | PASS: at 6b342cc, see Gates |
 | 16 | Independent reviewer | pending (next stage) |
 | 17 | PR and trace guard | PR from `release/1.0.0`, trace guard CLEAN; merge and publish left to the maintainer |
 | 18 | Contracts bite (mutations) | PASS: three author rounds, all killed (CERT-1.0-MUTATIONS.md) |
@@ -115,7 +115,8 @@ failed for each mutant, are in CERT-1.0-MUTATIONS.md (not shipped).
 
 - First round, 37 mutants of the library and the CLI at c76b0e7: all killed.
 - Second round, 15 mutants of the QA round 1 and 2 fixes at d9dc54f: all killed.
-- Third round, mutants of the QA round 3 fixes: RESULT3.
+- Third round, 14 mutants of the QA round 3 fixes at 6b342cc, including the two that QA lens e
+  found surviving at 6fa3a04: all killed.
 
 ## Packaging, e2e and Pythons (items 8, 10, 13, 14)
 
@@ -124,10 +125,10 @@ failed for each mutant, are in CERT-1.0-MUTATIONS.md (not shipped).
   drives the API from an empty folder with `-I`, and runs the `unidash` script and
   `python -m unidash` by subprocess (filter, `--form`, `--punct`, `--script-hyphens`,
   `--check` on a file and on stdin, `--version`, non UTF-8 input exits 2).
-- At d9dc54f (final code) on this PC, as at 25a6b63 before the QA fixes: wheel and sdist
+- At 6b342cc (round 3 code) on this PC, as at d9dc54f and 25a6b63 before: wheel and sdist
   built from a fresh clone, `twine check --strict` passed for both; for each of CPython
   3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2 and 3.14.2 free-threaded, the wheel in a fresh venv
-  and the sdist's own suite with `src` removed (fetched data, oracles and mypy present): 239
+  and the sdist's own suite with `src` removed (fetched data, oracles and mypy present): 273
   collected, all passed except the opt-in e2e and the POSIX file name test, plus the 9
   doctests of the installed package. 3.8 and 3.9 are below `requires-python`.
 - Wheel: the ten modules, `py.typed`, METADATA, the entry point
@@ -138,12 +139,13 @@ failed for each mutant, are in CERT-1.0-MUTATIONS.md (not shipped).
 
 ## Gates (item 15)
 
-At d9dc54f (final code) on this PC (CPython 3.13.2) from a fresh clone, each command on its
+At 6b342cc (round 3 code) on this PC (CPython 3.13.2) from a fresh clone, each command on its
 own, with the fetched Unicode data, the oracle packages and `UNIDASH_E2E=1` (so the wheel e2e,
 CLI by subprocess included, runs): `ruff format --check .`, `ruff check .`, `mypy --strict src`,
-`mypy --strict src tests` and `pytest` (247 passed, 1 skipped: the POSIX file name test,
-which cannot run on Windows) all exit 0. Earlier runs: 29b10bb (202 passed) and 04fe387
-(225 passed), both on another machine with CPython 3.14.2.
+`mypy --strict src tests` and `pytest` (281 passed, 1 skipped: the POSIX file name test,
+which cannot run on Windows) all exit 0; `pytest` without `UNIDASH_E2E` too. The commit that
+records these runs changes only this report and CERT-1.0-MUTATIONS.md, and `pytest` was run
+again on it before pushing. Earlier runs: d9dc54f (247 passed), 29b10bb and 04fe387.
 
 ## QA lenses (item 19) and independent review (item 16)
 
@@ -176,13 +178,13 @@ finding. The other lenses' findings, all fixed in 4d98934 and d9dc54f:
 | The linear time test could fail on a loaded machine | sizes of 200,000 and 1,600,000 characters, bound 40 (linear about 8, quadratic 64) | steady on the final runs |
 | GUIDE silent on other write errors and on case in form names | a full disk raises with a traceback; form names are exact | M45, M48 |
 
-Round 3, on 6fa3a04: every lens returned at least one finding. All are fixed in 931adf3 and
-d027888, each behaviour bug with a contract test that failed on 6fa3a04 first; the behaviour
-changes are in the CHANGELOG. No finding is disputed.
+Round 3, on 6fa3a04: every lens returned at least one finding. All are fixed in 931adf3,
+d027888 and 6b342cc, each behaviour bug with a contract test that failed on 6fa3a04 first;
+the behaviour changes are in the CHANGELOG. No finding is disputed.
 
 | Finding | Fix | Proof |
 | --- | --- | --- |
-| a-F1, d-D1, e-F1 (high, high, medium): `pytest` red at 6fa3a04, this report had 234 lines and its gate runs were of d9dc54f | mutation tables moved to CERT-1.0-MUTATIONS.md (also excluded from the sdist); gates and matrix rerun on the round 3 code and recorded below | `test_every_source_file_stays_under_two_hundred_lines` passes |
+| a-F1, d-D1, e-F1 (high, high, medium): `pytest` red at 6fa3a04, this report had 234 lines and its gate runs were of d9dc54f | mutation tables moved to CERT-1.0-MUTATIONS.md (also excluded from the sdist); gates and matrix rerun on the round 3 code and recorded above | `test_every_source_file_stays_under_two_hundred_lines` passes |
 | a-F2 (low): `DashHit` fields annotated with `ForwardRef('int')` at runtime | no `__future__` import in `_hit.py` | `test_contract.py::test_dash_hit_fields_carry_their_real_types` (failed before) |
 | a-F3 (low): `--punct --form ascii` accepted, exit 0 | `--form` defaults to None, so any explicit `--form` is refused with `--punct` | `test_cli_names.py::test_punct_refuses_any_explicit_form` (`ascii` failed before) |
 | b-F1 (low): the `tex` read-back promise covered "any other character" | README and GUIDE promise letters, digits, spaces and `. , ; : ? ! ( )`, and name the backslash escape, the markdown-it-py `+-` rule and code spans | oracle texts now mix CJK, accented words and that punctuation around the dashes (over 50 texts with a dash touching it); each named exception pinned by a test |

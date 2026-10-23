@@ -73,3 +73,27 @@ unmutated tree passed first. All 15 killed.
 | M51 | non UTF-8 file accepted | `test_cli_io.py::test_a_file_that_is_not_utf8_is_an_error_and_others_still_run` |
 | M52 | text of one block or less left unfolded | `__init__.py::unidash` |
 
+
+## Third author round
+
+On the code the QA round 3 fixes added: each mutant alone on `git archive 6b342cc` plus the
+fetched data, CPython 3.13.2 with the oracles and mypy, full suite with `-x`, on this PC; the
+unmutated tree passed first. All 14 killed. M63 and M64 are the two mutants QA lens e found
+surviving at 6fa3a04.
+
+| Mutant | Change | First failing test |
+| --- | --- | --- |
+| M53 | file name shortened at exactly 200 characters | `test_cli_names.py::test_file_names_are_shortened_only_past_two_hundred_characters[200-False]` |
+| M54 | huge file name kept whole | `test_cli_names.py::test_a_huge_file_name_is_cut_short_in_the_error[check0]` |
+| M55 | long file name loses its end | `test_cli_names.py::test_a_huge_file_name_is_cut_short_in_the_error[check0]` |
+| M56 | read error repeats the file name | `test_cli_names.py::test_a_missing_file_is_reported_with_its_name_and_reason` |
+| M57 | no fallback for lone surrogates in names | `test_cli_names.py::test_check_reports_a_name_with_a_lone_surrogate_escaped` |
+| M58 | lone surrogates replaced by question marks | `test_cli_names.py::test_check_reports_a_name_with_a_lone_surrogate_escaped` |
+| M59 | name refused by the system not caught | `test_cli_names.py::test_a_name_with_a_nul_is_reported_and_others_still_run[check0]` |
+| M60 | --punct accepts an explicit --form ascii | `test_cli_names.py::test_punct_refuses_any_explicit_form[ascii]` |
+| M61 | --form default restored to ascii | `test_cli.py::test_punct_folds_all_punctuation` |
+| M62 | future import back on DashHit | `test_contract.py::test_dash_hit_fields_carry_their_real_types` |
+| M63 | U+2028 ends a line (lens e N07) | `test_fuzz.py::test_find_dashes_positions_match_an_independent_count[11]` |
+| M64 | usage error cut at exactly 200 (lens e N13) | `test_cli_io.py::test_usage_errors_are_cut_only_past_two_hundred_characters[200-False]` |
+| M65 | usage error cut one character short | `test_cli_io.py::test_usage_errors_are_cut_only_past_two_hundred_characters[201-True]` |
+| M66 | vertical tab and form feed end a line | `test_fuzz.py::test_find_dashes_positions_match_an_independent_count[11]` |
