@@ -85,3 +85,53 @@ def test_only_markdown_it_takes_an_underline_after_leading_spaces() -> None:
         assert _markdown_it("Title\n" + line) == "<h2>Title</h2>"
     assert _python_markdown("Title\n " + EN) == "<p>Title\n " + EN + "</p>"
     assert _python_markdown("Title\n " + EM) == "<p>Title</p>\n<hr />"
+
+
+def test_markdown_it_underlines_the_whole_paragraph() -> None:
+    for text in ("A\nB", "A\nB\nC"):
+        for line in (EN, EM, EN + EN, EN + EM, " " + EN):
+            assert _markdown_it(text + "\n" + line) == "<h2>" + text + "</h2>"
+
+
+def test_python_markdown_reads_dashes_under_a_later_line_as_a_rule_or_text() -> None:
+    # Only the first line of a block takes an underline there; later lines use the
+    # thematic break rule, so a lone en dash reads back.
+    for text in ("A\nB", "A\nB\nC"):
+        for line in (EN, EN + " ", " " + EN):
+            assert _python_markdown(text + "\n" + line) == "<p>" + text + "\n" + line + "</p>"
+        for line in (EM, EN + EN, EN + EM, " " + EM):
+            assert _python_markdown(text + "\n" + line) == "<p>" + text + "</p>\n<hr />"
+
+
+def test_python_markdown_underlines_any_first_line_of_a_block() -> None:
+    cases = {
+        EM + "\n" + EN: ("<h2>" + EM + "</h2>", "<hr />\n<p>" + EN + "</p>"),
+        EM + "\n" + EM: ("<h2>" + EM + "</h2>", "<hr />\n<hr />"),
+        EN + " " + EN + "\n" + EM: ("<h2>" + EN + " " + EN + "</h2>", "<hr />\n<hr />"),
+        "Intro\n\n" + EM + "\n" + EN: (
+            "<p>Intro</p>\n<h2>" + EM + "</h2>",
+            "<p>Intro</p>\n<hr />\n<p>" + EN + "</p>",
+        ),
+        "- item\n" + EN: ("<h2>- item</h2>", "<ul>\n<li>item\n" + EN + "</li>\n</ul>"),
+        "> q\n" + EN: ("<h2>> q</h2>", "<blockquote>\n<p>q\n" + EN + "</p>\n</blockquote>"),
+    }
+    for text, (python_markdown, markdown_it) in cases.items():
+        assert _python_markdown(text) == python_markdown, text
+        assert _markdown_it(text) == markdown_it, text
+
+
+@pytest.mark.parametrize("render", BOTH)
+def test_a_block_starts_after_a_heading_or_a_thematic_break(render: Render) -> None:
+    assert render("# H\nTitle\n" + EN) == "<h1>H</h1>\n<h2>Title</h2>"
+    assert render("Title\n" + EN + "\nNext\n" + EN) == "<h2>Title</h2>\n<h2>Next</h2>"
+    assert render(EM + "\nA\n" + EN) == "<hr />\n<h2>A</h2>"
+    assert render("A\n" + EM + " " + EM + "\nB\n" + EN) == "<p>A</p>\n<hr />\n<h2>B</h2>"
+    # A code line or a `#` heading never takes an underline.
+    assert render("    code\n" + EN) == "<pre><code>code\n</code></pre>\n<p>" + EN + "</p>"
+    assert render("# H\n" + EN) == "<h1>H</h1>\n<p>" + EN + "</p>"
+
+
+def test_after_a_rule_in_a_paragraph_python_markdown_starts_a_new_block() -> None:
+    text = "A\nB\n" + EM + "\nC\n" + EN
+    assert _python_markdown(text) == "<p>A\nB</p>\n<hr />\n<h2>C</h2>"
+    assert _markdown_it(text) == "<h2>A\nB</h2>\n<h2>C</h2>"
