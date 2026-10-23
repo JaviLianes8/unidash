@@ -27,6 +27,14 @@ def _cut(text: str) -> str:
     return text
 
 
+def _short_name(name: str) -> str:
+    # A long path keeps both ends: where it starts and the file it names.
+    if len(name) > MESSAGE_LIMIT:
+        half = MESSAGE_LIMIT // 2
+        return f"{name[:half]}...{name[-half:]} ({len(name)} characters)"
+    return name
+
+
 def _report(message: str) -> None:
     # With stderr closed Python sets sys.stderr to None, and print would then write to stdout,
     # into the folded data. The message is dropped instead.
@@ -110,7 +118,7 @@ def _run(args: argparse.Namespace, table: Table, names: list[str], stdout: Binar
         # ValueError covers text that is not UTF-8 and, on POSIX, a name the system cannot
         # encode (a lone surrogate).
         except (OSError, ValueError) as error:
-            _report(f"unidash: {_cut(label)}: {_reason(error)}")
+            _report(f"unidash: {_short_name(label)}: {_reason(error)}")
             status = 2
             continue
         if not args.check:

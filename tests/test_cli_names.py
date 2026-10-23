@@ -98,11 +98,25 @@ def test_a_huge_file_name_is_cut_short_in_the_error(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     run = Run(monkeypatch)
-    assert main([*check, "S" * 30_000]) == 2
+    assert main([*check, "S" * 30_000 + ".txt"]) == 2
     error = run.err.getvalue()
     assert len(error) < 500, len(error)
-    assert error.startswith("unidash: " + "S" * 200 + "... (30000 characters): ")
-    assert error.count("S") == 200
+    assert error.startswith(
+        "unidash: " + "S" * 100 + "..." + "S" * 96 + ".txt (30004 characters): "
+    )
+    assert error.count("S") == 196
+
+
+@pytest.mark.parametrize(("size", "cut"), [(200, False), (201, True)])
+def test_file_names_are_shortened_only_past_two_hundred_characters(
+    size: int, cut: bool, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    name = "a" + "n" * (size - 5) + ".txt"
+    run = Run(monkeypatch)
+    assert main([name]) == 2
+    shown = f"{name[:100]}...{name[-100:]} ({size} characters)" if cut else name
+    assert run.err.getvalue() == f"unidash: {shown}: {os.strerror(errno.ENOENT)}\n"
 
 
 def test_the_installed_tool_cuts_a_huge_file_name_short(tmp_path: Path) -> None:

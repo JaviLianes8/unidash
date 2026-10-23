@@ -39,7 +39,8 @@ moves a character that is already classified.
 - `--punct` refuses any explicit `--form`, `--form ascii` included; before, only a form
   other than the default was refused.
 - A file the command line cannot read is reported with the system's reason only (the name is
-  no longer repeated), and a file name longer than 200 characters is cut in the message.
+  no longer repeated), and a file name longer than 200 characters is shortened to its first
+  and last 100 characters there.
 
 ### Fixed
 

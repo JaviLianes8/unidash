@@ -54,12 +54,14 @@ def test_a_fold_longer_than_one_block_is_written_whole(
 def test_a_file_that_is_not_utf8_is_an_error_and_others_still_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    bad = _file(tmp_path, "latin1.txt", b"caf\xe9 " + EM.encode())
-    good = _file(tmp_path, "good.txt", EM.encode())
+    # Bare names, so a long temporary folder cannot shorten them in the message.
+    monkeypatch.chdir(tmp_path)
+    _file(tmp_path, "latin1.txt", b"caf\xe9 " + EM.encode())
+    _file(tmp_path, "good.txt", EM.encode())
     run = Run(monkeypatch)
-    assert main([bad, good]) == 2
+    assert main(["latin1.txt", "good.txt"]) == 2
     assert run.out.getvalue() == b"-"
-    assert run.err.getvalue().startswith(f"unidash: {bad}: ")
+    assert run.err.getvalue().startswith("unidash: latin1.txt: 'utf-8' codec can't decode")
 
 
 @pytest.mark.parametrize("args", [[], ["-"]])

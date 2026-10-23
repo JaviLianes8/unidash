@@ -155,7 +155,8 @@ unidash [--form {ascii,tex,typographic}] [--script-hyphens] [--keep-soft-hyphens
   come back as they were, and other lone surrogates (possible in Windows names) as backslash
   escapes such as `\ud800`.
 - A file that cannot be read is reported as `unidash: FILE: REASON`, with the system's
-  reason or the decoding error, and FILE cut after 200 characters.
+  reason or the decoding error; a FILE longer than 200 characters is shortened to its first
+  and last 100.
 - Stdin is read only for `-`. With no standard input, `-` is reported as an unreadable
   file; with no standard output the tool stops at once with exit 2.
 - An invalid `--form` value is quoted to at most 40 characters in the usage error, and the
