@@ -137,6 +137,21 @@ def test_markdown_converters_leave_code_spans_as_written() -> None:
     assert _python_markdown(code) == _markdown_it(code) == "x <code>a--b</code> y"
 
 
+def test_markdown_block_rules_apply_to_the_folded_hyphens() -> None:
+    # The GUIDE names these: indented code keeps its hyphens, and a line of only dashes and
+    # spaces that folds to three hyphens or more is a thematic break. Full renders, not inline.
+    markdown = pytest.importorskip("markdown")
+    markdown_it = pytest.importorskip("markdown_it")
+    md = markdown_it.MarkdownIt("commonmark", {"typographer": True}).enable("replacements")
+    for render in (lambda text: markdown.markdown(text, extensions=["smarty"]), md.render):
+        code = fold_dashes("    pages 10" + EN + "20", "tex")
+        assert render(code).strip() == "<pre><code>pages 10--20\n</code></pre>"
+        for rule in (EM, " " + EM + " ", EN + " " + EM):
+            assert render(fold_dashes(rule, "tex")).strip() == "<hr />"
+        assert "<hr" not in render(fold_dashes(EN, "tex"))
+        assert "<pre>" not in render(fold_dashes("   pages 10" + EN + "20", "tex"))
+
+
 def test_markdown_it_leaves_an_en_dash_spaced_on_one_side_as_hyphens() -> None:
     for text in ("pages 10 " + EN + "20", "a" + EN + " b"):
         assert _markdown_it(fold_dashes(text, "tex")) == text.replace(EN, "--")

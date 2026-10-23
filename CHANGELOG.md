@@ -53,7 +53,8 @@ moves a character that is already classified.
 - `unidash --check` no longer crashes when a file name holds a lone surrogate (possible on
   Windows): the name is written with backslash escapes. A name the system refuses (one with
   a NUL character, or on POSIX a lone surrogate) is reported as an unreadable file (exit 2)
-  instead of a traceback.
+  instead of a traceback. On Windows every lone surrogate in the name is escaped, U+DC80 to
+  U+DCFF included; only POSIX names give those back as the undecodable bytes they stand for.
 - The `DashHit` fields are annotated with `int` and `str` at runtime, so `help()` and
   `inspect.signature` show real types instead of `ForwardRef` strings.
 

@@ -142,12 +142,15 @@ def _reason(error: Exception) -> str:
 
 
 def _name_bytes(label: str) -> bytes:
-    # File names on POSIX may hold undecodable bytes; give them back as they were. Other lone
-    # surrogates (Windows names may hold any) are written as backslash escapes.
-    try:
-        return label.encode("utf-8", "surrogateescape")
-    except UnicodeEncodeError:
-        return label.encode("utf-8", "backslashreplace")
+    # Where names are bytes (POSIX), U+DC80 to U+DCFF stand for undecodable bytes; give them
+    # back as they were. Windows names are UTF-16, where those are lone surrogates like any
+    # other, so every lone surrogate is written as a backslash escape.
+    if sys.getfilesystemencodeerrors() == "surrogateescape":
+        try:
+            return label.encode("utf-8", "surrogateescape")
+        except UnicodeEncodeError:
+            pass
+    return label.encode("utf-8", "backslashreplace")
 
 
 def main(argv: Sequence[str] | None = None) -> int:

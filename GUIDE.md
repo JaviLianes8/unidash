@@ -48,7 +48,9 @@ punctuation and the spaces on each side chosen apart. Other neighbours can be ma
 backslash right before a dash escapes its first hyphen in Python-Markdown, markdown-it-py and
 smartypants (`a\---b` reads back as a hyphen and an en dash), markdown-it-py turns a `+`
 right before a dash into `±`, and Python-Markdown and markdown-it-py leave the hyphens inside
-code spans as written. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an
+code spans as written. Their block rules apply too: a line indented four spaces (or a tab) is
+a code block, whose hyphens stay as written, and a line of only dashes and spaces that folds
+to three hyphens or more (any em dash does) is a thematic break, `<hr />`. The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an
 em dash and U+FE32 as an en dash. Only docutils and smartypants read the 6 and 9 hyphens of
 U+2E3A and U+2E3B as two and three em dashes; Python-Markdown and markdown-it-py leave them
 as hyphens.
@@ -151,9 +153,10 @@ unidash [--form {ascii,tex,typographic}] [--script-hyphens] [--keep-soft-hyphens
 - `--punct` uses `to_ascii_punct` and cannot be combined with `--form` (not even
   `--form ascii`), `--script-hyphens` or `--keep-soft-hyphens`.
 - `--check` writes nothing but `FILE:LINE:COLUMN: U+XXXX NAME` for each change, with the
-  positions of `find_dashes`. FILE is the name as given: undecodable bytes in a POSIX name
-  come back as they were, and other lone surrogates (possible in Windows names) as backslash
-  escapes such as `\ud800`.
+  positions of `find_dashes`. FILE is the name as given, however long: undecodable bytes in
+  a POSIX name come back as they were, and every lone surrogate in a Windows name (U+DC80 to
+  U+DCFF included) is written as a backslash escape such as `\ud800`, so the report stays
+  UTF-8.
 - A file that cannot be read is reported as `unidash: FILE: REASON`, with the system's
   reason or the decoding error; a FILE longer than 200 characters is shortened to its first
   and last 100.

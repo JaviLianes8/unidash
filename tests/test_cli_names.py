@@ -16,7 +16,9 @@ from unidash._cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 EN, EM = chr(0x2013), chr(0x2014)
-LONE = "lone" + chr(0xD800) + ".txt"
+# U+DC80 to U+DCFF stand for undecodable bytes only in POSIX names; in Windows names they are
+# lone surrogates like the others.
+SURROGATES = [0xD800, 0xDBFF, 0xDC00, 0xDC7F, 0xDC80, 0xDCFF, 0xDD00, 0xDFFF]
 
 
 class Run:
@@ -44,31 +46,39 @@ def test_an_explicit_ascii_form_is_the_default(monkeypatch: pytest.MonkeyPatch) 
     assert run.out.getvalue() == b"--"
 
 
+def _escaped(point: int) -> bytes:
+    return f"lone\\u{point:04x}.txt:1:2: U+2013 EN DASH\n".encode()
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="only Windows names hold lone surrogates")
+@pytest.mark.parametrize("point", SURROGATES)
 def test_check_reports_a_name_with_a_lone_surrogate_escaped(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    point: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    Path(LONE).write_bytes(("a" + EN + "\n").encode())
+    name = "lone" + chr(point) + ".txt"
+    Path(name).write_bytes(("a" + EN + "\n").encode())
     run = Run(monkeypatch)
-    assert main(["--check", LONE]) == 1
-    assert run.out.getvalue() == b"lone\\ud800.txt:1:2: U+2013 EN DASH\n"
+    assert main(["--check", name]) == 1
+    assert run.out.getvalue() == _escaped(point)
     assert run.err.getvalue() == ""
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="only Windows names hold lone surrogates")
-def test_the_installed_tool_checks_a_name_with_a_lone_surrogate(tmp_path: Path) -> None:
-    (tmp_path / LONE).write_bytes(("a" + EN + "\n").encode())
+@pytest.mark.parametrize("point", [0xD800, 0xDC80, 0xDCFF])
+def test_the_installed_tool_checks_a_name_with_a_lone_surrogate(point: int, tmp_path: Path) -> None:
+    name = "lone" + chr(point) + ".txt"
+    (tmp_path / name).write_bytes(("a" + EN + "\n").encode())
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
     result = subprocess.run(
-        [sys.executable, "-m", "unidash", "--check", LONE],
+        [sys.executable, "-m", "unidash", "--check", name],
         capture_output=True,
         cwd=tmp_path,
         env=env,
         timeout=120,
     )
     assert (result.returncode, result.stderr) == (1, b"")
-    assert result.stdout.replace(b"\r\n", b"\n") == b"lone\\ud800.txt:1:2: U+2013 EN DASH\n"
+    assert result.stdout.replace(b"\r\n", b"\n") == _escaped(point)
 
 
 @pytest.mark.parametrize("check", [[], ["--check"]])
@@ -116,6 +126,41 @@ def test_file_names_are_shortened_only_past_two_hundred_characters(
     run = Run(monkeypatch)
     assert main([name]) == 2
     shown = f"{name[:100]}...{name[-100:]} ({size} characters)" if cut else name
+    assert run.err.getvalue() == f"unidash: {shown}: {os.strerror(errno.ENOENT)}\n"
+
+
+@pytest.mark.parametrize(
+    ("handler", "expected"),
+    [("surrogateescape", b"x\x80"), ("surrogatepass", b"x\\udc80"), ("strict", b"x\\udc80")],
+)
+def test_report_names_follow_the_file_system_error_handler(
+    handler: str, expected: bytes, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Only POSIX (surrogateescape) names stand for bytes; elsewhere every lone surrogate is
+    # escaped. A POSIX system cannot open a name holding any other surrogate, so such a name
+    # is never reported by --check and is simply escaped whole here.
+    from unidash import _cli
+
+    monkeypatch.setattr(sys, "getfilesystemencodeerrors", lambda: handler)
+    assert _cli._name_bytes("x" + chr(0xDC80)) == expected
+    assert _cli._name_bytes("x" + chr(0xDC80) + chr(0xD800)) == b"x\\udc80\\ud800"
+    assert _cli._name_bytes("x" + chr(0x1F600)) == b"x" + chr(0x1F600).encode()
+
+
+def test_check_writes_a_long_readable_name_whole(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Only the unreadable-file message is shortened; the --check prefix is the name as given.
+    monkeypatch.chdir(tmp_path)
+    name = "a" * 206 + ".txt"
+    try:
+        Path(name).write_bytes(("x" + EM + "\n").encode())
+    except OSError:
+        pytest.skip("this system refuses paths this long")
+    run = Run(monkeypatch)
+    assert main(["--check", name, "b" * 206 + ".txt"]) == 2
+    assert run.out.getvalue() == (name + ":1:2: U+2014 EM DASH\n").encode()
+    shown = "b" * 100 + "..." + "b" * 96 + ".txt (210 characters)"
     assert run.err.getvalue() == f"unidash: {shown}: {os.strerror(errno.ENOENT)}\n"
 
 
