@@ -21,6 +21,8 @@ Progress:
 - [x] Third mutation round, matrix and gates on the round 3 code (6b342cc)
 - [x] QA round 4 (five lenses on 46ebbae): every finding fixed, fourth mutation round,
   matrix and gates on the fix (2bd07b5)
+- [x] QA round 5 (lenses on ef69a71): every finding fixed in the GUIDE, gates on the
+  fix (31abecc)
 - [ ] Five QA lenses passing on the final code (item 19)
 - [ ] Independent reviewer (item 16)
 
@@ -42,7 +44,7 @@ Progress:
 | 12 | Dated CHANGELOG section | PASS: 1.0.0, 2026-10-23 |
 | 13 | pyproject 1.0.0, Production/Stable | PASS |
 | 14 | sdist and wheel contents | PASS |
-| 15 | Gates each exit 0 | PASS: at 2bd07b5, see Gates |
+| 15 | Gates each exit 0 | PASS: at 31abecc, see Gates |
 | 16 | Independent reviewer | pending (next stage) |
 | 17 | PR and trace guard | PR from `release/1.0.0`, trace guard CLEAN; merge and publish left to the maintainer |
 | 18 | Contracts bite (mutations) | PASS: four author rounds, all killed (CERT-1.0-MUTATIONS.md) |
@@ -143,31 +145,29 @@ failed for each mutant, are in CERT-1.0-MUTATIONS.md (not shipped).
 
 ## Gates (item 15)
 
-At 2bd07b5 (round 4 code) on this PC (CPython 3.13.2) from a fresh clone, each command on its
+At 31abecc (round 5 fix) on this PC (CPython 3.13.2) from a fresh clone, each command on its
 own, with the fetched Unicode data, the oracle packages and `UNIDASH_E2E=1` (so the wheel e2e,
 CLI by subprocess included, runs): `ruff format --check .`, `ruff check .`, `mypy --strict src`,
-`mypy --strict src tests` and `pytest` (295 passed, 1 skipped: the POSIX file name test,
-which cannot run on Windows) all exit 0; `pytest` without `UNIDASH_E2E` too. The commit that
-records these runs changes only this report, CERT-1.0-MUTATIONS.md and CERT-1.0-QA.md, and
-`pytest` was run again on it before pushing. Earlier runs: 6b342cc (281 passed), d9dc54f
-(247 passed), 29b10bb and 04fe387.
+`mypy --strict src tests` and `pytest` (306 passed, 1 skipped: the POSIX file name test,
+which cannot run on Windows) all exit 0; `pytest` without `UNIDASH_E2E` too. 31abecc changes
+only the GUIDE and the tests, so the interpreter matrix and the mutation tables stay those of
+2bd07b5. The commit that records these runs changes only this report and CERT-1.0-QA.md, and
+`pytest` was run again on it before pushing. Earlier runs: 2bd07b5 (295 passed), 6b342cc
+(281 passed), d9dc54f (247 passed), 29b10bb and 04fe387.
 
 ## QA lenses (item 19) and independent review (item 16)
 
-Rounds 1 to 3 (on bbd84b8, 92a59e7 and 6fa3a04): every lens but b in round 2 returned
+Rounds 1 to 4 (on bbd84b8, 92a59e7, 6fa3a04 and 46ebbae): every lens but b in round 2 returned
 findings; all were fixed with a contract test that failed first, and none was disputed. The
 tables are in CERT-1.0-QA.md (not shipped).
 
-Round 4, on 46ebbae: all five lenses confirmed the round 3 fixes. Lens c found nothing else
-in 32 probes and 6,000 fuzzed names, lens d reran the six interpreters and the external
-consumer, and each lens reported what follows. All of it is fixed in 2bd07b5; the behaviour
-change is in the CHANGELOG.
+Round 5, on ef69a71: lenses a, b and d confirmed the round 4 fix (Windows `--check` names
+escaped on six interpreters and in WSL, gates, wheel and sdist, external consumer). The only
+new finding is in the GUIDE text that 2bd07b5 added, fixed in 31abecc; no library code
+changed, so the CHANGELOG has nothing to add.
 
 | Finding | Fix | Proof |
 | --- | --- | --- |
-| a-N1, b-N1, c3-F1, d-F1, e-G1 (low): on Windows `--check` wrote a lone surrogate from U+DC80 to U+DCFF in a file name as a raw byte, so the report was not UTF-8, against the GUIDE | `_name_bytes` uses surrogateescape only where the file system error handler is surrogateescape (POSIX names are bytes); elsewhere every lone surrogate is a backslash escape | `test_cli_names.py`: in process for U+D800, U+DBFF, U+DC00, U+DC7F, U+DC80, U+DCFF, U+DD00 and U+DFFF, by subprocess for U+D800, U+DC80 and U+DCFF (U+DC80 and U+DCFF failed on 46ebbae in both); the handler test runs the POSIX branch on every platform |
-| e-G1 (low): mutant P21, backslash escapes for POSIX bytes too, survived on Windows | the handler test above | M68 killed |
-| e-G2 (low): mutant P30, the `--check` prefix shortened like the error name, survived | contract: a readable 210-character name is written whole while a missing one of the same length is shortened | M69 killed (the new test fails with it) |
-| b-F1b (low): the `tex` read-back promise ignored Markdown block rules (a line indented four spaces is code; a line of only dashes and spaces is a thematic break) | GUIDE names both rules among the exceptions | `test_oracles.py::test_markdown_block_rules_apply_to_the_folded_hyphens`, full renders through Python-Markdown and markdown-it-py |
+| a-N2, b-F1c, d-N1 (low): the GUIDE block rule sentence held only for a line that starts the text. Right under a line of text a line of touching dashes, even a lone en dash, is a heading underline (`<h2>`, dashes lost) and an indented line continues the paragraph; Python-Markdown reads dashes three or more spaces apart back as text, not `<hr />`; the line was left unwrapped | GUIDE: the rules depend on the line before; at the start of the text or after a blank line, code block and thematic break (with the Python-Markdown spacing limit); right under text, heading underline (markdown-it-py also with up to three leading spaces) and paragraph continuation; paragraph rewrapped | `tests/test_markdown_blocks.py`, full renders through both converters: each case the lenses gave (`Title` plus an em dash or a lone en dash, an indented line under text, gaps of three spaces, a leading space) plus a tab indent and the blank-line case; the old GUIDE claims fail against these renders |
 
-Disputed findings: none. Next: the five lenses on the round 4 code, then the independent review.
+Disputed findings: none. Next: the five lenses on the round 5 code, then the independent review.

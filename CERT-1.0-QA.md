@@ -1,6 +1,6 @@
-# unidash 1.0.0 QA rounds 1 to 3 (item 19)
+# unidash 1.0.0 QA rounds 1 to 4 (item 19)
 
-The findings of the first three QA rounds and how each was fixed; the summary and the
+The findings of the first four QA rounds and how each was fixed; the summary and the
 latest round are in CERT-1.0-REPORT.md.
 
 Round 1, on bbd84b8: lenses a (API and docs), b (ground truth), c (adversarial), d (packaging and
@@ -46,5 +46,19 @@ the behaviour changes are in the CHANGELOG. No finding is disputed.
 | c2-F2 (low): a huge file name echoed twice in a read error | only the system's reason is printed, and a name over 200 characters keeps its first and last 100 | 30,000-character name: under 500 bytes of stderr; names of 200 and 201 characters (failed before) |
 | e-F2 (low): mutant N07, U+2028 ends a line, survives | test of VT, FF, U+001C to U+001E, U+0085, U+2028 and U+2029 before a dash; the fuzz pool gains five of them | N07 applied: the new test and all three fuzz seeds fail |
 | e-F3 (low): mutant N13, `>=` at the usage error limit, survives | messages of 199, 200 and 201 characters through the parser's `error` | N13 applied: the 200 case fails |
+
+Disputed findings: none.
+
+Round 4, on 46ebbae: all five lenses confirmed the round 3 fixes. Lens c found nothing else
+in 32 probes and 6,000 fuzzed names, lens d reran the six interpreters and the external
+consumer, and each lens reported what follows. All of it is fixed in 2bd07b5; the behaviour
+change is in the CHANGELOG.
+
+| Finding | Fix | Proof |
+| --- | --- | --- |
+| a-N1, b-N1, c3-F1, d-F1, e-G1 (low): on Windows `--check` wrote a lone surrogate from U+DC80 to U+DCFF in a file name as a raw byte, so the report was not UTF-8, against the GUIDE | `_name_bytes` uses surrogateescape only where the file system error handler is surrogateescape (POSIX names are bytes); elsewhere every lone surrogate is a backslash escape | `test_cli_names.py`: in process for U+D800, U+DBFF, U+DC00, U+DC7F, U+DC80, U+DCFF, U+DD00 and U+DFFF, by subprocess for U+D800, U+DC80 and U+DCFF (U+DC80 and U+DCFF failed on 46ebbae in both); the handler test runs the POSIX branch on every platform |
+| e-G1 (low): mutant P21, backslash escapes for POSIX bytes too, survived on Windows | the handler test above | M68 killed |
+| e-G2 (low): mutant P30, the `--check` prefix shortened like the error name, survived | contract: a readable 210-character name is written whole while a missing one of the same length is shortened | M69 killed (the new test fails with it) |
+| b-F1b (low): the `tex` read-back promise ignored Markdown block rules (a line indented four spaces is code; a line of only dashes and spaces is a thematic break) | GUIDE names both rules among the exceptions | full renders through Python-Markdown and markdown-it-py (now `tests/test_markdown_blocks.py`, reworded in round 5) |
 
 Disputed findings: none.
