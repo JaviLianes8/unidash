@@ -25,6 +25,8 @@ Progress:
   fix (31abecc)
 - [x] QA round 6 (lenses on 2ab1f9e): every finding fixed in the GUIDE, gates on the
   fix (daaba06)
+- [x] QA round 7 (lenses on 99eaeae): every finding fixed in the GUIDE, gates on the
+  fix (6b7d5b6)
 - [ ] Five QA lenses passing on the final code (item 19)
 - [ ] Independent reviewer (item 16)
 
@@ -147,31 +149,37 @@ failed for each mutant, are in CERT-1.0-MUTATIONS.md (not shipped).
 
 ## Gates (item 15)
 
-At daaba06 (round 6 fix) on this PC (CPython 3.13.2) from a fresh clone, each command on its
+At 6b7d5b6 (round 7 fix) on this PC (CPython 3.13.2) from a fresh clone, each command on its
 own, with the fetched Unicode data, the oracle packages and `UNIDASH_E2E=1` (so the wheel e2e,
 CLI by subprocess included, runs): `ruff format --check .`, `ruff check .`, `mypy --strict src`,
-`mypy --strict src tests` and `pytest` (312 passed, 1 skipped: the POSIX file name test,
-which cannot run on Windows) all exit 0; `pytest` without `UNIDASH_E2E` too. 31abecc and
-daaba06 change only the GUIDE and the tests, so the interpreter matrix and the mutation tables
-stay those of 2bd07b5. The commit that records these runs changes only this report and
-CERT-1.0-QA.md, and `pytest` was run again on it before pushing. Earlier runs: 31abecc (306
-passed), 2bd07b5 (295 passed), 6b342cc (281 passed), d9dc54f (247 passed), 29b10bb and 04fe387.
+`mypy --strict src tests` and `pytest` (314 passed, 1 skipped: the POSIX file name test,
+which cannot run on Windows) all exit 0; `pytest` without `UNIDASH_E2E` too. 31abecc, daaba06
+and 6b7d5b6 change only the GUIDE and the tests, so the interpreter matrix and the mutation
+tables stay those of 2bd07b5. The commit that records these runs changes only this report and
+CERT-1.0-QA.md, and `pytest` was run again on it before pushing. Earlier runs: daaba06 (312
+passed), 31abecc (306 passed), 2bd07b5 (295 passed), 6b342cc (281 passed), d9dc54f (247
+passed), 29b10bb and 04fe387.
 
 ## QA lenses (item 19) and independent review (item 16)
 
-Rounds 1 to 5 (on bbd84b8, 92a59e7, 6fa3a04, 46ebbae and ef69a71): every lens but b in round 2
-returned findings; all were fixed, each behaviour bug with a contract test that failed first,
-and none was disputed. The tables are in CERT-1.0-QA.md (not shipped).
+Rounds 1 to 6 (on bbd84b8, 92a59e7, 6fa3a04, 46ebbae, ef69a71 and 2ab1f9e): every lens but b
+in round 2 returned findings; all were fixed, each behaviour bug with a contract test that
+failed first, and none was disputed. The tables are in CERT-1.0-QA.md (not shipped).
 
-Round 6, on 2ab1f9e: lenses a and b confirmed the round 5 fix (the `Title` cases, the
-indented line under text) and the earlier ones (Windows `--check` names, the source file
-limit, the `DashHit` fields, `--punct`); lens b found nothing else in 6,320 renders under a
-one-line paragraph and after a blank line. Both found one more gap in the same GUIDE
-sentence, fixed in daaba06; no library code changed, so the CHANGELOG has nothing to add.
+Round 7, on 99eaeae: lenses a and b confirmed the round 6 fix (a later line over a lone en
+dash or an em dash, the first line of a block over touching dashes, 18 render tests passing)
+and 9 of the 10 new sweep probes of lens a agreed with the GUIDE. Three more gaps in the GUIDE
+block rules, fixed in 6b7d5b6; no library code changed, so the CHANGELOG has nothing to add.
 
 | Finding | Fix | Proof |
 | --- | --- | --- |
-| a-N3, b-G2 (low): the heading underline rule held in Python-Markdown only under the first line of a paragraph; under a later line a lone en dash reads back and touching dashes that fold to three hyphens or more give `<p>` then `<hr />`, while markdown-it-py makes the whole paragraph the `<h2>` | GUIDE: markdown-it-py underlines the whole paragraph, Python-Markdown only the first line of a block; under a later line Python-Markdown applies the thematic break rule | `tests/test_markdown_blocks.py`: two and three line paragraphs over a lone en dash (also with a space before or after), an em dash, two en dashes, an en and an em dash, and a space and an em dash, full renders through both converters |
-| b-G1 (low): Python-Markdown checks the underline on the first two lines of any block, so a line of dashes followed by touching dashes is an `<h2>` holding the first line, where markdown-it-py gives a thematic break | GUIDE: the first line of a block (start of text, after a blank line, a heading or a thematic break) becomes the heading whatever it holds, except an indented code line or a `#` heading; lists and quotes named (lens a, P10) | full renders of em over en, em over em, two spaced en dashes over an em dash, the same after a blank line, a list item and a quote over an en dash, blocks after a `#` heading, a setext heading and a thematic break, and the code line and `#` heading exceptions |
+| a-N4 (low): markdown-it-py keeps the dashes in a list item or a quote only for a lone en dash; touching dashes that fold to three hyphens or more (an em dash, two en dashes, an en and an em dash) end the list or the quote with `<hr />` | GUIDE: markdown-it-py keeps a lone en dash in the item or the quote, and ends the list or the quote with `<hr />` for dashes that fold to three hyphens or more | `tests/test_markdown_blocks.py`: `- item` and `> q` over an em dash, two en dashes, an en and an em dash, and an en dash and a hyphen, full renders through both converters |
+| b-H1 (low): a block-level HTML line is a third exception: Python-Markdown never underlines it and starts a new block on the next line, while markdown-it-py takes the next lines into the HTML block as raw text; raw HTML was not named among the places where hyphens stay as written | GUIDE: hyphens inside raw HTML stay as written in both; Python-Markdown underlines only a line that starts a block or follows a block-level HTML line, never the HTML line itself; under such a line Python-Markdown starts a new block while markdown-it-py takes the lines up to the next blank line into the HTML block | full renders of `<div>` and `<p>` holding an en or an em dash (the same as the fold in both), `<div>x</div>` over an en dash, an em dash, `Title` and an en dash, and an indented line, and `<p>x</p>` over an en dash |
+| b-H2 (low): a line right after an indented code line also starts a block, so in Python-Markdown an em dash there over an en dash is an `<h2>`, where markdown-it-py gives a thematic break and then an en dash | GUIDE: a line that starts a block starts the text or follows a blank line, a heading, a thematic break or an indented code line, in the block rule sentence and in the underline sentence | full renders of `    code` over an em dash and an en dash, and, through both converters alike, `    code` over an em dash and over `Title` and an en dash, and an indented line after a `#` heading and after a thematic break |
 
-Disputed findings: none. Next: the five lenses on the round 6 code, then the independent review.
+The new GUIDE sentences were checked against more renders than the tests pin: lists and
+ordered lists and quotes over each touching pair, `<div>x</div>` and `<!-- c -->` before
+every kind of line, and code lines, headings and thematic breaks before an indented line, a
+lone en dash, dashes three spaces apart, `Title` and an en dash, and a two-line paragraph.
+
+Disputed findings: none. Next: the five lenses on the round 7 code, then the independent review.

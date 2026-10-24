@@ -1,6 +1,6 @@
-# unidash 1.0.0 QA rounds 1 to 5 (item 19)
+# unidash 1.0.0 QA rounds 1 to 6 (item 19)
 
-The findings of the first five QA rounds and how each was fixed; the summary and the
+The findings of the first six QA rounds and how each was fixed; the summary and the
 latest round are in CERT-1.0-REPORT.md.
 
 Round 1, on bbd84b8: lenses a (API and docs), b (ground truth), c (adversarial), d (packaging and
@@ -71,5 +71,18 @@ changed, so the CHANGELOG has nothing to add.
 | Finding | Fix | Proof |
 | --- | --- | --- |
 | a-N2, b-F1c, d-N1 (low): the GUIDE block rule sentence held only for a line that starts the text. Right under a line of text a line of touching dashes, even a lone en dash, is a heading underline (`<h2>`, dashes lost) and an indented line continues the paragraph; Python-Markdown reads dashes three or more spaces apart back as text, not `<hr />`; the line was left unwrapped | GUIDE: the rules depend on the line before; at the start of the text or after a blank line, code block and thematic break (with the Python-Markdown spacing limit); right under text, heading underline (markdown-it-py also with up to three leading spaces) and paragraph continuation; paragraph rewrapped | `tests/test_markdown_blocks.py`, full renders through both converters: each case the lenses gave (`Title` plus an em dash or a lone en dash, an indented line under text, gaps of three spaces, a leading space) plus a tab indent and the blank-line case; the old GUIDE claims fail against these renders |
+
+Disputed findings: none.
+
+Round 6, on 2ab1f9e: lenses a and b confirmed the round 5 fix (the `Title` cases, the
+indented line under text) and the earlier ones (Windows `--check` names, the source file
+limit, the `DashHit` fields, `--punct`); lens b found nothing else in 6,320 renders under a
+one-line paragraph and after a blank line. Both found one more gap in the same GUIDE
+sentence, fixed in daaba06; no library code changed, so the CHANGELOG has nothing to add.
+
+| Finding | Fix | Proof |
+| --- | --- | --- |
+| a-N3, b-G2 (low): the heading underline rule held in Python-Markdown only under the first line of a paragraph; under a later line a lone en dash reads back and touching dashes that fold to three hyphens or more give `<p>` then `<hr />`, while markdown-it-py makes the whole paragraph the `<h2>` | GUIDE: markdown-it-py underlines the whole paragraph, Python-Markdown only the first line of a block; under a later line Python-Markdown applies the thematic break rule | `tests/test_markdown_blocks.py`: two and three line paragraphs over a lone en dash (also with a space before or after), an em dash, two en dashes, an en and an em dash, and a space and an em dash, full renders through both converters |
+| b-G1 (low): Python-Markdown checks the underline on the first two lines of any block, so a line of dashes followed by touching dashes is an `<h2>` holding the first line, where markdown-it-py gives a thematic break | GUIDE: the first line of a block (start of text, after a blank line, a heading or a thematic break) becomes the heading whatever it holds, except an indented code line or a `#` heading; lists and quotes named (lens a, P10) | full renders of em over en, em over em, two spaced en dashes over an em dash, the same after a blank line, a list item and a quote over an en dash, blocks after a `#` heading, a setext heading and a thematic break, and the code line and `#` heading exceptions |
 
 Disputed findings: none.
