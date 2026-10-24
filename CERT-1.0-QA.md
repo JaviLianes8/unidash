@@ -1,6 +1,6 @@
-# unidash 1.0.0 QA rounds 1 to 4 (item 19)
+# unidash 1.0.0 QA rounds 1 to 5 (item 19)
 
-The findings of the first four QA rounds and how each was fixed; the summary and the
+The findings of the first five QA rounds and how each was fixed; the summary and the
 latest round are in CERT-1.0-REPORT.md.
 
 Round 1, on bbd84b8: lenses a (API and docs), b (ground truth), c (adversarial), d (packaging and
@@ -60,5 +60,16 @@ change is in the CHANGELOG.
 | e-G1 (low): mutant P21, backslash escapes for POSIX bytes too, survived on Windows | the handler test above | M68 killed |
 | e-G2 (low): mutant P30, the `--check` prefix shortened like the error name, survived | contract: a readable 210-character name is written whole while a missing one of the same length is shortened | M69 killed (the new test fails with it) |
 | b-F1b (low): the `tex` read-back promise ignored Markdown block rules (a line indented four spaces is code; a line of only dashes and spaces is a thematic break) | GUIDE names both rules among the exceptions | full renders through Python-Markdown and markdown-it-py (now `tests/test_markdown_blocks.py`, reworded in round 5) |
+
+Disputed findings: none.
+
+Round 5, on ef69a71: lenses a, b and d confirmed the round 4 fix (Windows `--check` names
+escaped on six interpreters and in WSL, gates, wheel and sdist, external consumer). The only
+new finding is in the GUIDE text that 2bd07b5 added, fixed in 31abecc; no library code
+changed, so the CHANGELOG has nothing to add.
+
+| Finding | Fix | Proof |
+| --- | --- | --- |
+| a-N2, b-F1c, d-N1 (low): the GUIDE block rule sentence held only for a line that starts the text. Right under a line of text a line of touching dashes, even a lone en dash, is a heading underline (`<h2>`, dashes lost) and an indented line continues the paragraph; Python-Markdown reads dashes three or more spaces apart back as text, not `<hr />`; the line was left unwrapped | GUIDE: the rules depend on the line before; at the start of the text or after a blank line, code block and thematic break (with the Python-Markdown spacing limit); right under text, heading underline (markdown-it-py also with up to three leading spaces) and paragraph continuation; paragraph rewrapped | `tests/test_markdown_blocks.py`, full renders through both converters: each case the lenses gave (`Title` plus an em dash or a lone en dash, an indented line under text, gaps of three spaces, a leading space) plus a tab indent and the blank-line case; the old GUIDE claims fail against these renders |
 
 Disputed findings: none.
