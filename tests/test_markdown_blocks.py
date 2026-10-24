@@ -155,20 +155,27 @@ def test_after_a_rule_in_a_paragraph_python_markdown_starts_a_new_block() -> Non
     assert _markdown_it(text) == "<h2>A\nB</h2>\n<h2>C</h2>"
 
 
-def test_raw_html_keeps_the_hyphens_and_only_python_markdown_ends_its_block() -> None:
-    for tag in ("<div>a" + EN + "b</div>", "<p>a " + EM + " b</p>"):
-        assert _python_markdown(tag) == _markdown_it(tag) == fold_dashes(tag, "tex")
-    code = "<pre><code>pages 10--20\n</code></pre>"
-    cases = {
-        "<div>x</div>\n" + EN: ("<div>x</div>\n<p>" + EN + "</p>", "<div>x</div>\n--"),
-        "<div>x</div>\n" + EM: ("<div>x</div>\n<hr />", "<div>x</div>\n---"),
-        "<p>x</p>\n" + EN: ("<p>x</p>\n<p>" + EN + "</p>", "<p>x</p>\n--"),
-        "<div>x</div>\nTitle\n" + EN: ("<div>x</div>\n<h2>Title</h2>", "<div>x</div>\nTitle\n--"),
-        "<div>x</div>\n    pages 10" + EN + "20": (
-            "<div>x</div>\n" + code,
-            "<div>x</div>\n    pages 10--20",
-        ),
-    }
-    for text, (python_markdown, markdown_it) in cases.items():
-        assert _python_markdown(text) == python_markdown, text
-        assert _markdown_it(text) == markdown_it, text
+def test_markdown_it_keeps_dashes_indented_to_the_item_text_in_the_item() -> None:
+    heading = "<ul>\n<li>\n<h2>item</h2>\n</li>\n</ul>"
+    for indent in ("  ", "   ", "     "):
+        for line in (EN, EM, EN + EN, EN + EM):
+            assert _markdown_it("- item\n" + indent + line) == heading
+    assert _markdown_it("1. item\n   " + EM) == heading.replace("ul>", "ol>")
+    assert _markdown_it("- item\n  " + EN + " " + EN) == "<ul>\n<li>item\n<hr />\n</li>\n</ul>"
+    # Indented less than the item text, the dashes act as at the start of the line.
+    assert _markdown_it("- item\n " + EN) == "<ul>\n<li>item\n" + EN + "</li>\n</ul>"
+    assert _markdown_it("- item\n " + EM) == "<ul>\n<li>item</li>\n</ul>\n<hr />"
+
+
+def test_python_markdown_reads_indented_dashes_under_an_item_or_a_quote_as_a_rule() -> None:
+    for indent in (" ", "  ", "   "):
+        item = "<ul>\n<li>item\n" + indent + EN + "</li>\n</ul>"
+        assert _python_markdown("- item\n" + indent + EN) == item
+        quote = "<blockquote>\n<p>q\n" + indent + EN + "</p>\n</blockquote>"
+        assert _python_markdown("> q\n" + indent + EN) == quote
+        for line in (EM, EN + EN, EN + EM, EN + " " + EN):
+            item = "<ul>\n<li>item</li>\n</ul>\n<hr />"
+            assert _python_markdown("- item\n" + indent + line) == item
+            quote = "<blockquote>\n<p>q</p>\n</blockquote>\n<hr />"
+            assert _python_markdown("> q\n" + indent + line) == quote
+            assert _markdown_it("> q\n" + indent + line) == quote

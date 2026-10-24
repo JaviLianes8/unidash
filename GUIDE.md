@@ -15,6 +15,8 @@ The complete contract of the public API. Everything here is kept for every 1.x r
   already classified never changes class or target within 1.x.
 - `is_dash` and `DASHES` use the data built into the library, never the interpreter's
   `unicodedata`, so the answer is the same on every supported Python.
+- The functions keep no state besides their read-only tables, so they can be called from any
+  number of threads, including on the free-threaded build of Python.
 
 ## `fold_dashes(text, form="ascii", *, script_hyphens=False, keep_soft_hyphens=False)`
 
@@ -48,30 +50,35 @@ punctuation and the spaces on each side chosen apart. Other neighbours can be ma
 backslash right before a dash escapes its first hyphen in Python-Markdown, markdown-it-py and
 smartypants (`a\---b` reads back as a hyphen and an en dash), markdown-it-py turns a `+`
 right before a dash into `±`, and Python-Markdown and markdown-it-py leave the hyphens inside
-code spans and raw HTML as written. Their block rules apply too and depend on the lines
+code spans and raw HTML as written. Their block rules apply too and depend on the line
 before. A line that starts a block (it starts the text or follows a blank line, a heading, a
 thematic break or an indented code line) is a code block, whose hyphens stay as written, when
 it is indented four spaces (or a tab), and a thematic break, `<hr />`, when it holds only
-dashes and spaces that fold to three hyphens or more (any em dash does); in Python-Markdown
-only while no two of its dashes are three or more spaces apart, otherwise it reads back as
-text. Right under a line of text, an indented line continues that paragraph instead, and a
-line of touching dashes, even a single en dash, is a heading underline: the text above
-becomes `<h2>` and the dashes are lost (markdown-it-py also allows up to three spaces before
-them, Python-Markdown none). Other lines of dashes and spaces there follow the thematic break
-rule. Which text is above differs: markdown-it-py makes the whole paragraph the heading,
-Python-Markdown only a line that starts a block or follows a block-level HTML line, whatever
-it holds except a code line, a `#` heading or a block-level HTML line. So in Python-Markdown
-an em dash over an en dash gives `<h2>` holding an em dash (markdown-it-py reads a thematic
-break, then an en dash), and a list item or a quote over touching dashes becomes a heading;
-markdown-it-py keeps a lone en dash in the item or the quote, but ends the list or the quote
-with `<hr />` for dashes that fold to three hyphens or more. Under a later line of a
-paragraph, Python-Markdown applies the thematic break rule instead: a lone en dash reads
-back, and touching dashes that fold to three hyphens or more end the paragraph with `<hr />`.
-Under a block-level HTML line such as `<div>x</div>`, Python-Markdown starts a new block,
-while markdown-it-py takes the lines up to the next blank line into the HTML block. The other
-dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an em dash and U+FE32 as an
-en dash. Only docutils and smartypants read the 6 and 9 hyphens of U+2E3A and U+2E3B as two
-and three em dashes; Python-Markdown and markdown-it-py leave them as hyphens.
+dashes and spaces that fold to three hyphens or more (any em dash does), in Python-Markdown
+only while no two of its dashes are three or more spaces apart (otherwise it reads back as
+text). Right under a line of text, an indented line continues the paragraph, and a line of
+touching dashes, even a lone en dash, is a heading underline: the text above becomes `<h2>`
+and the dashes are lost (markdown-it-py allows up to three spaces before them,
+Python-Markdown none); other lines of dashes and spaces follow the thematic break rule.
+markdown-it-py makes the whole paragraph the heading, Python-Markdown only a line that starts
+a block or follows a block-level HTML line, whatever it holds except a code line, a `#`
+heading or HTML; under a later line Python-Markdown applies the thematic break rule: a lone
+en dash reads back, three hyphens or more end the paragraph with `<hr />`. So in
+Python-Markdown an em dash over an en dash is an `<h2>` holding the em dash (markdown-it-py:
+`<hr />`, then an en dash), and a list item or a quote over touching dashes at the start of
+the line becomes a heading, where markdown-it-py keeps a lone en dash in the item or the
+quote and ends the list or the quote with `<hr />` for three hyphens or more. markdown-it-py
+puts dashes indented to the text of a list item (two spaces under `- item`) in it: touching
+ones make its text an `<h2>`, others that fold to three hyphens or more an `<hr />`, both
+inside the item. Python-Markdown applies the thematic break rule to dashes indented one to
+three spaces under an item or a quote. After a line of only HTML, both start a new block if
+it closes a comment, a `<pre>`, `<script>`, `<style>` or `<textarea>` element, a `<?`
+instruction, a `<!DOCTYPE` or a CDATA section. When it is block-level HTML that closes what
+it opens, such as `<div>x</div>` or `<hr>`, only Python-Markdown does: markdown-it-py takes
+the lines up to a blank line into the HTML block, as both do under a tag left open (`<div>`).
+The other dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an em dash and
+U+FE32 as an en dash. Only docutils and smartypants read the 6 and 9 hyphens of U+2E3A and
+U+2E3B as two and three em dashes; Python-Markdown and markdown-it-py leave them as hyphens.
 
 ## `iter_fold_dashes(chunks, form="ascii", *, ...)`
 
@@ -85,7 +92,7 @@ read lazily and each must be a `str`. `"".join(iter_fold_dashes(chunks))` equals
 Yields, in text order, a `DashHit` for every character that `fold_dashes` with the same
 options would change. Arguments are checked when it is called; the hits are produced lazily.
 
-`DashHit` is a named tuple
+`DashHit` pickles as `unidash.DashHit` and is a named tuple
 `(offset: int, line: int, column: int, char: str, name: str)`:
 
 - `offset` counts code points from 0, so `text[hit.offset] == hit.char`.
@@ -96,8 +103,6 @@ options would change. Arguments are checked when it is called; the hits are prod
 - `name` is the Unicode name. For the dashes it comes from the built-in data; for other
   characters (only with the command line `--punct`) from the interpreter, or `U+XXXX`.
 - `codepoint` (a property) is `U+XXXX`, with at least four hex digits.
-
-`DashHit` pickles as `unidash.DashHit`.
 
 ## `is_dash(char)` and `DASHES`
 
@@ -193,8 +198,3 @@ unidash [--form {ascii,tex,typographic}] [--script-hyphens] [--keep-soft-hyphens
   errors, such as reading stdin twice. Any other error writing the output, such as a full
   disk, is not caught: Python reports it with a traceback.
 - `python -m unidash` runs the same tool.
-
-## Threads
-
-The functions keep no state besides their read-only tables, so they can be called from any
-number of threads, including on the free-threaded build of Python.
