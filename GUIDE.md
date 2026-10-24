@@ -48,24 +48,27 @@ punctuation and the spaces on each side chosen apart. Other neighbours can be ma
 backslash right before a dash escapes its first hyphen in Python-Markdown, markdown-it-py and
 smartypants (`a\---b` reads back as a hyphen and an en dash), markdown-it-py turns a `+`
 right before a dash into `±`, and Python-Markdown and markdown-it-py leave the hyphens inside
-code spans as written. Their block rules apply too, and they depend on the lines before. A
-line that starts the text or follows a blank line is a code block, whose hyphens stay as
-written, when it is indented four spaces (or a tab), and a thematic break, `<hr />`, when it
-holds only dashes and spaces that fold to three hyphens or more (any em dash does); in
-Python-Markdown only while no two of its dashes are three or more spaces apart, otherwise it
-reads back as text. Right under a line of text, an indented line continues that paragraph
-instead, and a line of touching dashes, even a single en dash, is a heading underline: the
-text above becomes `<h2>` and the dashes are lost (markdown-it-py also allows up to three
-spaces before them, Python-Markdown none). Other lines of dashes and spaces there follow the
-thematic break rule. Which text is above differs: markdown-it-py makes the whole paragraph
-the heading, Python-Markdown only the first line of a block (the line that starts the text or
-follows a blank line, a heading or a thematic break), whatever that line holds except an
-indented code line or a `#` heading. So in Python-Markdown an em dash over an en dash gives
-`<h2>` holding an em dash, where markdown-it-py reads a thematic break and then an en dash,
-and a list item or a quote over touching dashes becomes a heading (markdown-it-py keeps the
-dashes in the item or the quote). Under the second or a later line of a paragraph,
-Python-Markdown applies the thematic break rule instead: a lone en dash reads back, and
-touching dashes that fold to three hyphens or more end the paragraph with `<hr />`. The other
+code spans and raw HTML as written. Their block rules apply too and depend on the lines
+before. A line that starts a block (it starts the text or follows a blank line, a heading, a
+thematic break or an indented code line) is a code block, whose hyphens stay as written, when
+it is indented four spaces (or a tab), and a thematic break, `<hr />`, when it holds only
+dashes and spaces that fold to three hyphens or more (any em dash does); in Python-Markdown
+only while no two of its dashes are three or more spaces apart, otherwise it reads back as
+text. Right under a line of text, an indented line continues that paragraph instead, and a
+line of touching dashes, even a single en dash, is a heading underline: the text above
+becomes `<h2>` and the dashes are lost (markdown-it-py also allows up to three spaces before
+them, Python-Markdown none). Other lines of dashes and spaces there follow the thematic break
+rule. Which text is above differs: markdown-it-py makes the whole paragraph the heading,
+Python-Markdown only a line that starts a block or follows a block-level HTML line, whatever
+it holds except a code line, a `#` heading or a block-level HTML line. So in Python-Markdown
+an em dash over an en dash gives `<h2>` holding an em dash (markdown-it-py reads a thematic
+break, then an en dash), and a list item or a quote over touching dashes becomes a heading;
+markdown-it-py keeps a lone en dash in the item or the quote, but ends the list or the quote
+with `<hr />` for dashes that fold to three hyphens or more. Under a later line of a
+paragraph, Python-Markdown applies the thematic break rule instead: a lone en dash reads
+back, and touching dashes that fold to three hyphens or more end the paragraph with `<hr />`.
+Under a block-level HTML line such as `<div>x</div>`, Python-Markdown starts a new block,
+while markdown-it-py takes the lines up to the next blank line into the HTML block. The other
 dashes fold many to one: U+2015, U+FE31 and U+FE58 read back as an em dash and U+FE32 as an
 en dash. Only docutils and smartypants read the 6 and 9 hyphens of U+2E3A and U+2E3B as two
 and three em dashes; Python-Markdown and markdown-it-py leave them as hyphens.

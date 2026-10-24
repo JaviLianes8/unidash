@@ -114,14 +114,32 @@ def test_python_markdown_underlines_any_first_line_of_a_block() -> None:
         ),
         "- item\n" + EN: ("<h2>- item</h2>", "<ul>\n<li>item\n" + EN + "</li>\n</ul>"),
         "> q\n" + EN: ("<h2>> q</h2>", "<blockquote>\n<p>q\n" + EN + "</p>\n</blockquote>"),
+        "    code\n" + EM + "\n" + EN: (
+            "<pre><code>code\n</code></pre>\n<h2>" + EM + "</h2>",
+            "<pre><code>code\n</code></pre>\n<hr />\n<p>" + EN + "</p>",
+        ),
     }
     for text, (python_markdown, markdown_it) in cases.items():
         assert _python_markdown(text) == python_markdown, text
         assert _markdown_it(text) == markdown_it, text
 
 
+def test_markdown_it_ends_a_list_or_a_quote_over_a_rule_of_dashes() -> None:
+    # A lone en dash stays in the item or the quote (above); three hyphens or more do not.
+    for line in (EM, EN + EN, EN + EM, EN + "-"):
+        assert _python_markdown("- item\n" + line) == "<h2>- item</h2>"
+        assert _markdown_it("- item\n" + line) == "<ul>\n<li>item</li>\n</ul>\n<hr />"
+        assert _python_markdown("> q\n" + line) == "<h2>> q</h2>"
+        assert _markdown_it("> q\n" + line) == "<blockquote>\n<p>q</p>\n</blockquote>\n<hr />"
+
+
 @pytest.mark.parametrize("render", BOTH)
-def test_a_block_starts_after_a_heading_or_a_thematic_break(render: Render) -> None:
+def test_a_block_starts_after_a_heading_a_thematic_break_or_a_code_line(render: Render) -> None:
+    code = "<pre><code>pages 10--20\n</code></pre>"
+    assert render("# H\n    pages 10" + EN + "20") == "<h1>H</h1>\n" + code
+    assert render(EM + "\n    pages 10" + EN + "20") == "<hr />\n" + code
+    assert render("    code\n" + EM) == "<pre><code>code\n</code></pre>\n<hr />"
+    assert render("    code\nTitle\n" + EN) == "<pre><code>code\n</code></pre>\n<h2>Title</h2>"
     assert render("# H\nTitle\n" + EN) == "<h1>H</h1>\n<h2>Title</h2>"
     assert render("Title\n" + EN + "\nNext\n" + EN) == "<h2>Title</h2>\n<h2>Next</h2>"
     assert render(EM + "\nA\n" + EN) == "<hr />\n<h2>A</h2>"
@@ -135,3 +153,22 @@ def test_after_a_rule_in_a_paragraph_python_markdown_starts_a_new_block() -> Non
     text = "A\nB\n" + EM + "\nC\n" + EN
     assert _python_markdown(text) == "<p>A\nB</p>\n<hr />\n<h2>C</h2>"
     assert _markdown_it(text) == "<h2>A\nB</h2>\n<h2>C</h2>"
+
+
+def test_raw_html_keeps_the_hyphens_and_only_python_markdown_ends_its_block() -> None:
+    for tag in ("<div>a" + EN + "b</div>", "<p>a " + EM + " b</p>"):
+        assert _python_markdown(tag) == _markdown_it(tag) == fold_dashes(tag, "tex")
+    code = "<pre><code>pages 10--20\n</code></pre>"
+    cases = {
+        "<div>x</div>\n" + EN: ("<div>x</div>\n<p>" + EN + "</p>", "<div>x</div>\n--"),
+        "<div>x</div>\n" + EM: ("<div>x</div>\n<hr />", "<div>x</div>\n---"),
+        "<p>x</p>\n" + EN: ("<p>x</p>\n<p>" + EN + "</p>", "<p>x</p>\n--"),
+        "<div>x</div>\nTitle\n" + EN: ("<div>x</div>\n<h2>Title</h2>", "<div>x</div>\nTitle\n--"),
+        "<div>x</div>\n    pages 10" + EN + "20": (
+            "<div>x</div>\n" + code,
+            "<div>x</div>\n    pages 10--20",
+        ),
+    }
+    for text, (python_markdown, markdown_it) in cases.items():
+        assert _python_markdown(text) == python_markdown, text
+        assert _markdown_it(text) == markdown_it, text
