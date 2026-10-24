@@ -27,6 +27,8 @@ Progress:
   fix (daaba06)
 - [x] QA round 7 (lenses on 99eaeae): every finding fixed in the GUIDE, gates on the
   fix (6b7d5b6)
+- [x] QA round 8 (lenses on 3b85a49): every finding fixed in the GUIDE, gates on the
+  fix (01694d2)
 - [ ] Five QA lenses passing on the final code (item 19)
 - [ ] Independent reviewer (item 16)
 
@@ -48,7 +50,7 @@ Progress:
 | 12 | Dated CHANGELOG section | PASS: 1.0.0, 2026-10-23 |
 | 13 | pyproject 1.0.0, Production/Stable | PASS |
 | 14 | sdist and wheel contents | PASS |
-| 15 | Gates each exit 0 | PASS: at 31abecc, see Gates |
+| 15 | Gates each exit 0 | PASS: at 01694d2, see Gates |
 | 16 | Independent reviewer | pending (next stage) |
 | 17 | PR and trace guard | PR from `release/1.0.0`, trace guard CLEAN; merge and publish left to the maintainer |
 | 18 | Contracts bite (mutations) | PASS: four author rounds, all killed (CERT-1.0-MUTATIONS.md) |
@@ -149,37 +151,37 @@ failed for each mutant, are in CERT-1.0-MUTATIONS.md (not shipped).
 
 ## Gates (item 15)
 
-At 6b7d5b6 (round 7 fix) on this PC (CPython 3.13.2) from a fresh clone, each command on its
+At 01694d2 (round 8 fix) on this PC (CPython 3.13.2) from a fresh clone, each command on its
 own, with the fetched Unicode data, the oracle packages and `UNIDASH_E2E=1` (so the wheel e2e,
 CLI by subprocess included, runs): `ruff format --check .`, `ruff check .`, `mypy --strict src`,
-`mypy --strict src tests` and `pytest` (314 passed, 1 skipped: the POSIX file name test,
-which cannot run on Windows) all exit 0; `pytest` without `UNIDASH_E2E` too. 31abecc, daaba06
-and 6b7d5b6 change only the GUIDE and the tests, so the interpreter matrix and the mutation
-tables stay those of 2bd07b5. The commit that records these runs changes only this report and
-CERT-1.0-QA.md, and `pytest` was run again on it before pushing. Earlier runs: daaba06 (312
-passed), 31abecc (306 passed), 2bd07b5 (295 passed), 6b342cc (281 passed), d9dc54f (247
-passed), 29b10bb and 04fe387.
+`mypy --strict src tests` and `pytest` (331 passed, 1 skipped: the POSIX file name test,
+which cannot run on Windows) all exit 0; `pytest` without `UNIDASH_E2E` too. 31abecc, daaba06,
+6b7d5b6 and 01694d2 change only the GUIDE and the tests, so the interpreter matrix and the
+mutation tables stay those of 2bd07b5. The commit that records these runs changes only this
+report and CERT-1.0-QA.md, and `pytest` was run again on it before pushing. Earlier runs:
+6b7d5b6 (314 passed), daaba06 (312 passed), 31abecc (306 passed), 2bd07b5 (295 passed),
+6b342cc (281 passed), d9dc54f (247 passed), 29b10bb and 04fe387.
 
 ## QA lenses (item 19) and independent review (item 16)
 
-Rounds 1 to 6 (on bbd84b8, 92a59e7, 6fa3a04, 46ebbae, ef69a71 and 2ab1f9e): every lens but b
-in round 2 returned findings; all were fixed, each behaviour bug with a contract test that
-failed first, and none was disputed. The tables are in CERT-1.0-QA.md (not shipped).
+Rounds 1 to 7 (on bbd84b8, 92a59e7, 6fa3a04, 46ebbae, ef69a71, 2ab1f9e and 99eaeae): every
+lens but b in round 2 returned findings; all were fixed, each behaviour bug with a contract
+test that failed first, and none was disputed. The tables are in CERT-1.0-QA.md (not shipped).
 
-Round 7, on 99eaeae: lenses a and b confirmed the round 6 fix (a later line over a lone en
-dash or an em dash, the first line of a block over touching dashes, 18 render tests passing)
-and 9 of the 10 new sweep probes of lens a agreed with the GUIDE. Three more gaps in the GUIDE
-block rules, fixed in 6b7d5b6; no library code changed, so the CHANGELOG has nothing to add.
+Round 8, on 3b85a49: lenses a and b confirmed the round 7 fix (`<div>` and `<p>` lines, the
+code line that starts a block, 20 render tests passing) and lens b found 7 of its 10 new
+probes in line with the GUIDE. Two more gaps in the GUIDE block rules, fixed in 01694d2; no
+library code changed, so the CHANGELOG has nothing to add.
 
 | Finding | Fix | Proof |
 | --- | --- | --- |
-| a-N4 (low): markdown-it-py keeps the dashes in a list item or a quote only for a lone en dash; touching dashes that fold to three hyphens or more (an em dash, two en dashes, an en and an em dash) end the list or the quote with `<hr />` | GUIDE: markdown-it-py keeps a lone en dash in the item or the quote, and ends the list or the quote with `<hr />` for dashes that fold to three hyphens or more | `tests/test_markdown_blocks.py`: `- item` and `> q` over an em dash, two en dashes, an en and an em dash, and an en dash and a hyphen, full renders through both converters |
-| b-H1 (low): a block-level HTML line is a third exception: Python-Markdown never underlines it and starts a new block on the next line, while markdown-it-py takes the next lines into the HTML block as raw text; raw HTML was not named among the places where hyphens stay as written | GUIDE: hyphens inside raw HTML stay as written in both; Python-Markdown underlines only a line that starts a block or follows a block-level HTML line, never the HTML line itself; under such a line Python-Markdown starts a new block while markdown-it-py takes the lines up to the next blank line into the HTML block | full renders of `<div>` and `<p>` holding an en or an em dash (the same as the fold in both), `<div>x</div>` over an en dash, an em dash, `Title` and an en dash, and an indented line, and `<p>x</p>` over an en dash |
-| b-H2 (low): a line right after an indented code line also starts a block, so in Python-Markdown an em dash there over an en dash is an `<h2>`, where markdown-it-py gives a thematic break and then an en dash | GUIDE: a line that starts a block starts the text or follows a blank line, a heading, a thematic break or an indented code line, in the block rule sentence and in the underline sentence | full renders of `    code` over an em dash and an en dash, and, through both converters alike, `    code` over an em dash and over `Title` and an en dash, and an indented line after a `#` heading and after a thematic break |
+| a-N5, b-I1 (low, medium): markdown-it-py takes the next lines into the HTML block only for HTML that ends at a blank line (CommonMark types 6 and 7, such as `<div>`, `<p>`, `<hr>`); a comment and a `<pre>`, `<script>`, `<style>` or `<textarea>` element end on their closing line, so there both converters start a new block on the next line | GUIDE: after a line of only HTML, both start a new block if it closes a comment, a `<pre>`, `<script>`, `<style>` or `<textarea>` element, a `<?` instruction, a `<!DOCTYPE` or a CDATA section; only Python-Markdown does after block-level HTML that closes what it opens (`<div>x</div>`, `<hr>`). Found while checking the fix: under a tag left open (`<div>`) both take the next lines into the HTML block, and `<!ELEMENT` or text after the closing tag behave otherwise in Python-Markdown, so the GUIDE names only the cases checked | new `tests/test_markdown_html.py` (the raw HTML test moved there so both files stay under 200 lines): thirteen such blocks, on one line and over several, each over an en dash, an em dash, `Title` and an en dash, and an indented line, the same full render in both converters; `<hr>`, `<hr />`, `<section>` and a nested `<div>` added to the markdown-it-py raw case; `<div>`, `<p>` and `<div>x` left open |
+| a-N6 (low): in markdown-it-py dashes indented to the text of a list item belong to the item, so `- item` over two spaces and an em dash gives `<h2>item</h2>` inside the item, not the list and `<hr />` | GUIDE: the list and quote heading sentence holds for dashes at the start of the line; markdown-it-py puts dashes indented to the item text in the item (touching ones make its text an `<h2>`, others that fold to three hyphens or more an `<hr />`, both inside the item); Python-Markdown applies the thematic break rule to dashes indented one to three spaces under an item or a quote | `tests/test_markdown_blocks.py`: `- item` over two, three and five spaces and a lone en dash, an em dash, two en dashes or an en and an em dash; `1. item` over three spaces and an em dash; two spaced en dashes inside the item; one space (less than the item text); in Python-Markdown, one to three spaces under `- item` and `> q`, with the quote case through both converters |
 
-The new GUIDE sentences were checked against more renders than the tests pin: lists and
-ordered lists and quotes over each touching pair, `<div>x</div>` and `<!-- c -->` before
-every kind of line, and code lines, headings and thematic breaks before an indented line, a
-lone en dash, dashes three spaces apart, `Title` and an en dash, and a two-line paragraph.
+To keep the GUIDE at 200 lines the Threads paragraph became a bullet of the stability promise
+and the `DashHit` pickle sentence joined the named tuple line; their content is unchanged. The
+new sentences were checked against more renders than the tests pin: `- item`, `* item`,
+`1. item` and `> q` over zero to six spaces and four dash lines, and over 25 kinds of HTML
+line over an en dash and an em dash, most also over `Title` and an en dash.
 
-Disputed findings: none. Next: the five lenses on the round 7 code, then the independent review.
+Disputed findings: none. Next: the five lenses on the round 8 code, then the independent review.
