@@ -9,7 +9,6 @@ import os
 import subprocess
 import sys
 import tarfile
-import venv
 import zipfile
 from pathlib import Path
 
@@ -64,6 +63,8 @@ def _run(*cmd: str | Path, cwd: Path | None = None, stdin: bytes | None = None) 
 
 
 def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
+    import venv
+
     dist = tmp_path / "dist"
     _run(sys.executable, "-m", "build", "--wheel", "--outdir", dist, ROOT)
     (wheel,) = dist.glob("unidash-*.whl")

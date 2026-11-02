@@ -8,7 +8,7 @@ Progress:
 - [x] Fresh Unicode sources and reference programs (item 7)
 - [x] Built-wheel API, CLI and real PyPI 0.2.0 upgrade (item 8)
 - [x] Seeded fuzz and scaling contracts (item 9)
-- [ ] Available interpreter inventory and installed-wheel suite (item 10)
+- [x] Available interpreter inventory and installed-wheel suite (item 10)
 - [x] README, dated changelog, metadata and archive inspection (items 11 to 14)
 - [x] Four gates and strict typing of tests (item 15)
 - [x] Twelve additional mutations, all killed (item 18)
@@ -94,24 +94,44 @@ reference. Metadata is 1.0.0, Production/Stable, Python >=3.10 with classifiers 
 
 ## Supported interpreters (item 10)
 
-Local interpreter discovery and the installed-wheel suite are in progress. CPython 3.14.6
-runs the gates. Stale launcher registrations are not counted as available interpreters.
-Earlier work ran 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2 and 3.14.2t at 2bd07b5.
+All eleven distinct available builds passed the installed-wheel suite: 320 tests and
+nine doctests each. Each used a fresh venv or an isolated copy of the embedded runtime,
+tests extracted from the sdist with its `src` removed, and the fetched Unicode data.
+
+| CPython build | Suite | Doctests |
+| --- | --- | --- |
+| 3.10.11 (embedded), 3.10.22 | 320 passed, 3 skipped each | 9 passed each |
+| 3.11.9 (embedded), 3.11.18 | 320 passed, 3 skipped each | 9 passed each |
+| 3.12.10 (embedded), 3.12.16 | 320 passed, 3 skipped each | 9 passed each |
+| 3.13.2 (embedded), 3.13.18 | 320 passed, 3 skipped each | 9 passed each |
+| 3.14.6, 3.14.10, 3.14.10 free-threaded | 320 passed, 3 skipped each | 9 passed each |
+
+Skips: the opt-in build test (run separately), POSIX byte filenames, and a readable
+210-character filename whose full temporary path this Windows configuration refuses.
+Embedded builds omit `venv`; moving that import inside the opt-in build test fixed test
+collection, and all four embedded suites then passed. No library change was needed.
+The launcher also lists deleted installations: 3.10.19, 3.11.5, 3.11.14, 3.11.17,
+3.12.12, 3.12.15, 3.13.16, 3.14.2/3.14.2t and 3.14.8/3.14.8t. Those paths cannot run;
+the table covers every available build found by the filesystem inventory.
 
 ## Gates (item 15)
 
-On CPython 3.14.6, each command exits 0 independently: `ruff format --check .`,
+On CPython 3.14.6, each final command exits 0 independently: `ruff format --check .`,
 `ruff check .`, `mypy --strict src`, `mypy --strict src tests`, and `pytest`.
-The source-tree suite passes 320 tests with 12 skips (optional fetched files, opt-in e2e
-and platform-specific cases); the real installed-wheel upgrade test passes separately.
-The fetched-source and installed-wheel suite results will be recorded after completion.
+The final source-tree suite includes fetched sources, all reference programs,
+`UNIDASH_E2E=1` and `UNIDASH_E2E_PYPI=1`: **330 passed, 2 skipped** in 116.37 seconds.
+The skips are POSIX byte filenames and the Windows long-path case described above.
+The final wheel and sdist both pass `twine check --strict`. Without optional fetched
+files and build tests, the earlier source-tree run passed 320 tests with 12 skips.
+The installed suite with fetched sources passes 320 tests plus nine doctests on every
+available build above. All preparation items (1 to 15 and 18) are complete.
 
 ## Mutation round (item 18)
 
 On 2026-11-02, twelve mutations were applied one at a time to a scratch copy. The API,
 tools, dash, punctuation and CLI contract tests ran with `-x` and bytecode disabled.
 Every mutant returned pytest exit 1 with an assertion failure. Baseline and restored
-source passed the same selection. No mutant survived. The additional round is below;
+source passed the same selection (149 passed, one POSIX filename skip). No mutant survived. The additional round is below;
 earlier rounds (37, 15, 14 and 6 killed mutants) remain in CERT-1.0-MUTATIONS.md.
 
 | ID | Mutation | First failing contract |

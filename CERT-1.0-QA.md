@@ -1,7 +1,7 @@
 # unidash 1.0.0 QA rounds 1 to 8 (item 19)
 
-The findings of the first eight QA rounds and how each was fixed; the summary and the
-latest round are in CERT-1.0-REPORT.md.
+The findings of the first eight QA rounds and how each was fixed; current status is in
+CERT-1.0-REPORT.md.
 
 Round 1, on bbd84b8: lenses a (API and docs), b (ground truth), c (adversarial), d (packaging and
 e2e) and e (contract strength, 79 mutants of its own) all returned FAIL. Every finding is fixed in

@@ -16,7 +16,8 @@ pip install -r requirements-dev.txt
   and the Unicode data in `tests/vectors/unicode/`, skipping when it has not been fetched.
   Command line tests also start the tool as a subprocess. Only the opt-in installed-wheel
   test (`UNIDASH_E2E=1`) may need the network: it builds the package, and the isolated
-  build downloads the build backend.
+  build downloads the build backend. Also set `UNIDASH_E2E_PYPI=1` to install PyPI 0.2.0
+  first and verify the in-place upgrade to the built wheel, including CLI and pickle use.
 - Run `scripts/check.ps1` (format, lint, types, tests) and make sure it passes.
 - One logical change per commit, imperative subject line.
 
