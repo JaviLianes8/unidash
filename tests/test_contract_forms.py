@@ -27,6 +27,14 @@ INVALID_FORMS = (
         for length in range(1, len(form))
     ]
     + [pytest.param("", id="empty")]
+    + [
+        pytest.param(
+            "".join(chr(start + ord(char) - ord("a")) for char in form),
+            id=f"compatibility-{style}-{form}",
+        )
+        for style, start in (("fullwidth", 0xFF41), ("circled", 0x24D0), ("bold", 0x1D41A))
+        for form in FORMS
+    ]
 )
 
 

@@ -157,43 +157,42 @@ passed the final commit. These checks remain for the next stage.
 
 ### QA lenses, round 1 fixes (2026-11-02)
 
-Base: `5da447254e0739a9c6014b171baed37bc8b36ce9`.
 Fix commit: `974e3d78a80ab202b3b455be5a0dcc80975c3e2f` on `release/1.0.0`.
-All seven findings are addressed without changing signatures, defaults or exception types.
-
-B-001 clarifies Markdown HTML boundaries. C-01 and C-02 bound API and CLI diagnostics.
-E-01 to E-04 cover hostile string conversion, empty chunks, lazy hit construction and
-repeated CLI filenames. The original finding table and named tests remain in the fix commit.
-
-Diagnostic contracts first failed 24 cases; fixes passed all 74 focused cases. Each of
-M16, M19, M20 and M35 failed its named contract and passed after restoration. All gates,
-strict test typing, wheel checks and PyPI upgrade passed: **351 passed, 11 skipped**.
-Full evidence remains in the round-1 commit and scratch `unidash-cert/fix-r1/`.
+B-001 documents Markdown HTML boundaries; C-01/C-02 bound diagnostics; E-01 to E-04 cover
+hostile string conversion, empty chunks, lazy hits and repeated filenames. All seven
+were fixed without signature, default or exception-type changes. Contracts first failed
+24 cases; fixes passed 74 focused cases. M16/M19/M20/M35 were killed. All gates, strict test
+typing, wheel and upgrade passed: **351 passed, 11 skipped**. Full findings and evidence
+remain in that commit and scratch `unidash-cert/fix-r1/`.
 
 ### QA lenses, round 2 fixes (2026-11-02)
 
-Base: `89a252e97aa3a226680e18833e58729fd349cf17`.
-Fix commit: this commit, `test exact form rejection across apis and cli`.
-All three coverage findings are addressed; none is disputed. Production code and
-behavior are unchanged. Independent lens re-verification remains pending.
+Fix commit: `2ed264fbb95ea9f04c6098ddb376f080d45c13ad` on `release/1.0.0`.
+E-05/E-06/E-07 add rejection contracts for padded, proper-prefix and empty forms across
+all four APIs and both CLI modes, including installed-wheel checks. No behavior changed;
+none was disputed. N10/N11/N12 failed 72/96/6 cases; restored source passed all 174 cases.
+All gates and strict test typing passed; wheel and PyPI upgrade: **481 passed, 55 skipped**
+(44 optional reference checks, nine Unicode fixtures, two platform/path cases).
+The round-3 lens e re-check confirmed all three fixes. Full evidence remains in that
+commit and scratch `unidash-cert/fix-r2/`; timeout 300 s and scratch basetemps were used.
 
-| Finding | Contract added |
-| --- | --- |
-| E-05 | Reject leading, trailing and surrounding spaces, plus tabs/newlines, for all three forms. |
-| E-06 | Reject every nonempty proper prefix of ascii, tex and typographic. |
-| E-07 | Reject explicit empty forms with API ValueError and CLI exit 2 and empty stdout. |
+### QA lenses, round 3 fix (2026-11-02)
 
-`test_contract_forms.py` applies these cases to all four form-taking APIs, checking
-errors before iterator consumption, and to CLI filter and check modes by subprocess.
-The installed-wheel test also checks all four APIs and console-script rejection.
-In a scratch copy, N10 fails 72 new cases, N11 fails 96 and N12 fails six; each includes
-all four APIs and both CLI modes. Restored source passes all 174 new cases.
-
-Final gates `ruff format --check .`, `ruff check .`, `mypy --strict src` and pytest exit 0.
-`mypy --strict src tests` also passes. Full suite with wheel and PyPI upgrade: **481 passed, 55 skipped**.
-Skips: 44 optional reference checks, nine absent Unicode fixtures and two platform/path cases.
-Tests use timeout 300 s and scratch basetemps; closed-reader checks use an ordinary file sink.
-Logs and mutation repros: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r2/`.
+Base: `2ed264fbb95ea9f04c6098ddb376f080d45c13ad`.
+Fix commit: this commit, `test rejection of compatibility form spellings`.
+E-08 adds rejection contracts for fullwidth, circled and mathematical-bold spellings
+of all three forms. All four APIs must raise ValueError immediately; CLI filter/check
+modes must exit 2 with empty stdout and the allowed-form diagnostic. Installed-wheel
+checks cover the same APIs and modes. Production code, API and behavior are unchanged;
+CHANGELOG records the coverage fix. None is disputed; independent re-verification is pending.
+Baseline and restored source pass 228 cases. NFKC normalization after `require_text`
+fails all 54 new cases (36 API, 18 CLI), with 174 existing cases passing. A separately
+built mutated wheel fails its external consumer on fullwidth ascii acceptance.
+The mutation was restored. Tests use timeout 300 s and scratch basetemps. Evidence:
+`C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r3/`.
+Final format, lint, strict typing of src/tests and pytest gates exit 0. With wheel and
+PyPI upgrade enabled: **535 passed, 55 skipped** in 267.41 s. Skips match round 2.
+The report was condensed to meet its 200-line contract; all behavioral checks passed.
 
 ## Release status (item 17)
 

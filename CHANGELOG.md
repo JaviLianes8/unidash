@@ -45,6 +45,9 @@ moves a character that is already classified.
 
 ### Fixed
 
+- Contracts now reject fullwidth, circled and mathematical-bold form spellings across all
+  four form-taking APIs and CLI filter/check modes, including installed-wheel checks;
+  behavior is unchanged.
 - Contracts now reject padded, abbreviated and explicitly empty forms across all four
   form-taking APIs and the CLI, including installed-wheel checks; behavior is unchanged.
 - The guide distinguishes preserved hyphens in Markdown code spans, HTML blocks and

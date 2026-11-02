@@ -40,7 +40,14 @@ assert u.to_ascii_punct(chr(0x201C) + "x" + chr(0x201D) + chr(0x301C)) == '"x"~'
 assert (hit.line, hit.column, hit.codepoint, hit.name) == (2, 1, "U+2014", "EM DASH")
 assert "".join(u.iter_fold_dashes([en, em])) == "--"
 assert u.is_dash(chr(0x2212)) and not u.is_dash(soft)
-for bad in (" ascii", "tex ", " typographic ", "\ttex\n", "as", "te", "typo", ""):
+compatibility_forms = [
+    "".join(chr(start + ord(char) - ord("a")) for char in form)
+    for start in (0xFF41, 0x24D0, 0x1D41A)
+    for form in ("ascii", "tex", "typographic")
+]
+for bad in (
+    " ascii", "tex ", " typographic ", "\ttex\n", "as", "te", "typo", "", *compatibility_forms,
+):
     for function, args in (
         (u.fold_dashes, (em,)), (u.iter_fold_dashes, ([em],)),
         (u.find_dashes, (em,)), (u.dash_table, ()),
@@ -116,16 +123,32 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
 
     (work / "a.md").write_bytes(("x" + chr(0x2014) + "y\n").encode("utf-8"))
     script = bindir / ("unidash.exe" if sys.platform == "win32" else "unidash")
-    for bad in (" ascii", "tex ", " typographic ", "\ttex\n", "as", "te", "typo", ""):
-        rejected = subprocess.run(
-            [str(script), "--form", bad],
-            cwd=work,
-            input="x\u2014".encode(),
-            capture_output=True,
-            timeout=300,
-        )
-        assert (rejected.returncode, rejected.stdout) == (2, b"")
-        assert b"form must be one of ascii, tex, typographic" in rejected.stderr
+    compatibility_forms = [
+        "".join(chr(start + ord(char) - ord("a")) for char in form)
+        for start in (0xFF41, 0x24D0, 0x1D41A)
+        for form in ("ascii", "tex", "typographic")
+    ]
+    for bad in (
+        " ascii",
+        "tex ",
+        " typographic ",
+        "\ttex\n",
+        "as",
+        "te",
+        "typo",
+        "",
+        *compatibility_forms,
+    ):
+        for mode in ([], ["--check"]):
+            rejected = subprocess.run(
+                [str(script), *mode, "--form", bad],
+                cwd=work,
+                input="x\u2014".encode(),
+                capture_output=True,
+                timeout=300,
+            )
+            assert (rejected.returncode, rejected.stdout) == (2, b"")
+            assert b"form must be one of ascii, tex, typographic" in rejected.stderr
     assert _run(script, "--form", "tex", "a.md", cwd=work) == b"x---y\n"
     check = subprocess.run(
         [str(script), "--check", "a.md"], cwd=work, capture_output=True, check=False
