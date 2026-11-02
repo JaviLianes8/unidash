@@ -158,8 +158,8 @@ passed the final commit. These checks remain for the next stage.
 
 ### QA lenses, round 1 fixes (2026-11-02)
 
-Base: `5da447254e0739a9c6014b171baed37bc8b36ce9`. Fix commit: the commit containing this
-section, identified by Git revision `:/^fix round one qa findings$` on `release/1.0.0`.
+Base: `5da447254e0739a9c6014b171baed37bc8b36ce9`.
+Fix commit: `974e3d78a80ab202b3b455be5a0dcc80975c3e2f` on `release/1.0.0`.
 All seven reported findings are addressed; no finding is disputed. Independent lens
 re-verification remains pending. Public signatures, defaults and exception types are unchanged.
 
