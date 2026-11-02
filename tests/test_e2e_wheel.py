@@ -40,6 +40,17 @@ assert u.to_ascii_punct(chr(0x201C) + "x" + chr(0x201D) + chr(0x301C)) == '"x"~'
 assert (hit.line, hit.column, hit.codepoint, hit.name) == (2, 1, "U+2014", "EM DASH")
 assert "".join(u.iter_fold_dashes([en, em])) == "--"
 assert u.is_dash(chr(0x2212)) and not u.is_dash(soft)
+for bad in (" ascii", "tex ", " typographic ", "\ttex\n", "as", "te", "typo", ""):
+    for function, args in (
+        (u.fold_dashes, (em,)), (u.iter_fold_dashes, ([em],)),
+        (u.find_dashes, (em,)), (u.dash_table, ()),
+    ):
+        try:
+            function(*args, form=bad)
+        except ValueError as caught:
+            assert str(caught) == "form must be one of ascii, tex, typographic"
+        else:
+            raise AssertionError((function.__name__, bad))
 for bad, error in (("latex", ValueError), (["ascii"], TypeError), ("x" * 10**6, ValueError)):
     try:
         u.fold_dashes("a", bad)
@@ -105,6 +116,16 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
 
     (work / "a.md").write_bytes(("x" + chr(0x2014) + "y\n").encode("utf-8"))
     script = bindir / ("unidash.exe" if sys.platform == "win32" else "unidash")
+    for bad in (" ascii", "tex ", " typographic ", "\ttex\n", "as", "te", "typo", ""):
+        rejected = subprocess.run(
+            [str(script), "--form", bad],
+            cwd=work,
+            input="x\u2014".encode(),
+            capture_output=True,
+            timeout=300,
+        )
+        assert (rejected.returncode, rejected.stdout) == (2, b"")
+        assert b"form must be one of ascii, tex, typographic" in rejected.stderr
     assert _run(script, "--form", "tex", "a.md", cwd=work) == b"x---y\n"
     check = subprocess.run(
         [str(script), "--check", "a.md"], cwd=work, capture_output=True, check=False

@@ -45,6 +45,8 @@ moves a character that is already classified.
 
 ### Fixed
 
+- Contracts now reject padded, abbreviated and explicitly empty forms across all four
+  form-taking APIs and the CLI, including installed-wheel checks; behavior is unchanged.
 - The guide distinguishes preserved hyphens in Markdown code spans, HTML blocks and
   attributes from typographic substitutions in inline HTML text, including `<code>`.
 - Contracts now cover overridden `str.__str__`, empty stream chunks, lazy hit construction

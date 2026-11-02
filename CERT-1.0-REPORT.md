@@ -1,7 +1,6 @@
 # unidash 1.0.0 certification report
 
 Preparation resumed on 2026-11-02 from 6f49665. Earlier commits and evidence are retained.
-No library implementation changed in this preparation update.
 
 Progress:
 - [x] Public API, errors, typing, examples and contracts (items 1 to 6)
@@ -160,35 +159,41 @@ passed the final commit. These checks remain for the next stage.
 
 Base: `5da447254e0739a9c6014b171baed37bc8b36ce9`.
 Fix commit: `974e3d78a80ab202b3b455be5a0dcc80975c3e2f` on `release/1.0.0`.
-All seven reported findings are addressed; no finding is disputed. Independent lens
-re-verification remains pending. Public signatures, defaults and exception types are unchanged.
+All seven findings are addressed without changing signatures, defaults or exception types.
 
-| Finding | Change and verification |
+B-001 clarifies Markdown HTML boundaries. C-01 and C-02 bound API and CLI diagnostics.
+E-01 to E-04 cover hostile string conversion, empty chunks, lazy hit construction and
+repeated CLI filenames. The original finding table and named tests remain in the fix commit.
+
+Diagnostic contracts first failed 24 cases; fixes passed all 74 focused cases. Each of
+M16, M19, M20 and M35 failed its named contract and passed after restoration. All gates,
+strict test typing, wheel checks and PyPI upgrade passed: **351 passed, 11 skipped**.
+Full evidence remains in the round-1 commit and scratch `unidash-cert/fix-r1/`.
+
+### QA lenses, round 2 fixes (2026-11-02)
+
+Base: `89a252e97aa3a226680e18833e58729fd349cf17`.
+Fix commit: this commit, `test exact form rejection across apis and cli`.
+All three coverage findings are addressed; none is disputed. Production code and
+behavior are unchanged. Independent lens re-verification remains pending.
+
+| Finding | Contract added |
 | --- | --- |
-| B-001 | GUIDE distinguishes HTML blocks and attributes from inline HTML text. Six new converter cases pass with Markdown 3.11.2 and markdown-it-py 4.2.0. |
-| C-01 | API and CLI form errors omit rejected values and list allowed forms. Short and long synthetic secret markers are covered across all four form-taking APIs and CLI subprocesses. |
-| C-02 | Type errors omit received class names for text, char, chunk, form and both flags. Million-character and control-character class names produce fixed diagnostics. |
-| E-01 | The hostile str subclass now raises from `__str__`; the existing character and form contracts still pass. M16 fails `test_str_subclasses_are_read_as_their_characters`. |
-| E-02 | Complete chunk sequences include empty inputs and chunks emptied by folding. M19 fails `test_stream_preserves_every_empty_chunk`. |
-| E-03 | No hits are constructed before iteration, and each next call constructs one. M20 fails `test_find_constructs_only_the_hit_requested`. |
-| E-04 | Subprocess tests preserve repeated filenames and order in filter and check modes. M35 fails `test_repeated_files_preserve_multiplicity_and_order`. |
+| E-05 | Reject leading, trailing and surrounding spaces, plus tabs/newlines, for all three forms. |
+| E-06 | Reject every nonempty proper prefix of ascii, tex and typographic. |
+| E-07 | Reject explicit empty forms with API ValueError and CLI exit 2 and empty stdout. |
 
-Diagnostic contracts were added first: the original implementation produced 24 failures
-and four passes. After fixing diagnostics, the focused contracts and HTML tests pass
-(74 passed). Each of M16, M19, M20 and M35 was injected separately in a scratch copy:
-pytest exited 1 on the named contract; restoring each original file made its test pass.
-The four coverage findings required no production behavior change. CHANGELOG records
-both diagnostic changes and the documentation and contract corrections.
+`test_contract_forms.py` applies these cases to all four form-taking APIs, checking
+errors before iterator consumption, and to CLI filter and check modes by subprocess.
+The installed-wheel test also checks all four APIs and console-script rejection.
+In a scratch copy, N10 fails 72 new cases, N11 fails 96 and N12 fails six; each includes
+all four APIs and both CLI modes. Restored source passes all 174 new cases.
 
-Final local gates: `ruff format --check .`, `ruff check .`, `mypy --strict src`,
-`mypy --strict src tests` and the full pytest suite exit 0 on CPython 3.14.6:
-**351 passed, 11 skipped** in 123.05 seconds.
-Pytest includes the wheel build, installed API/CLI checks and PyPI 0.2.0 upgrade, with a
-300-second per-test timeout. Optional Unicode source files are absent in this checkout;
-their nine tests skip, along with the two platform/path skips documented above.
-Closed-reader tests use an ordinary scratch sink via a startup hook instead of a device.
-Logs and mutation repros are under `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r1/`.
-An initial full run found the guide over its line limit; the shortened guide is rechecked.
+Final gates `ruff format --check .`, `ruff check .`, `mypy --strict src` and pytest exit 0.
+`mypy --strict src tests` also passes. Full suite with wheel and PyPI upgrade: **481 passed, 55 skipped**.
+Skips: 44 optional reference checks, nine absent Unicode fixtures and two platform/path cases.
+Tests use timeout 300 s and scratch basetemps; closed-reader checks use an ordinary file sink.
+Logs and mutation repros: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r2/`.
 
 ## Release status (item 17)
 
