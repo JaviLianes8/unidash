@@ -45,6 +45,9 @@ moves a character that is already classified.
 
 ### Fixed
 
+- Contracts now reject non-ASCII additions to form names across all four form-taking APIs
+  and CLI filter/check modes, and bytes forms at call time across all four APIs. The
+  installed-wheel checks cover both cases; behavior is unchanged.
 - Contracts now reject fullwidth, circled and mathematical-bold form spellings across all
   four form-taking APIs and CLI filter/check modes, including installed-wheel checks;
   behavior is unchanged.

@@ -35,6 +35,15 @@ INVALID_FORMS = (
         for style, start in (("fullwidth", 0xFF41), ("circled", 0x24D0), ("bold", 0x1D41A))
         for form in FORMS
     ]
+    + [
+        pytest.param(
+            form[:position] + addition + form[position:],
+            id=f"nonascii-{form}-{ord(addition):04x}-{position}",
+        )
+        for form in FORMS
+        for addition in ("\u200b", "\u00e9", "\u0301", "\U0001f600")
+        for position in (0, 1, len(form))
+    ]
 )
 
 
@@ -43,6 +52,19 @@ INVALID_FORMS = (
 def test_every_api_rejects_nonexact_forms(function: Callable[..., Any], form: str) -> None:
     # Iterator-returning APIs must reject options at the call, before any iteration.
     with pytest.raises(ValueError, match=r"^form must be one of ascii, tex, typographic$"):
+        if function is dash_table:
+            function(form=form)
+        elif function is iter_fold_dashes:
+            function(["x\u2014"], form=form)
+        else:
+            function("x\u2014", form=form)
+
+
+@pytest.mark.parametrize("form", [form.encode("ascii") for form in FORMS])
+@pytest.mark.parametrize("function", [fold_dashes, iter_fold_dashes, find_dashes, dash_table])
+def test_every_api_rejects_bytes_forms(function: Callable[..., Any], form: bytes) -> None:
+    # Do not consume returned iterators: the type check must happen at call time.
+    with pytest.raises(TypeError, match=r"^form must be a str$"):
         if function is dash_table:
             function(form=form)
         elif function is iter_fold_dashes:
