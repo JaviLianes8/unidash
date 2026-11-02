@@ -98,7 +98,7 @@ def test_is_dash_needs_one_character(bad: str) -> None:
 
 
 def test_is_dash_needs_a_str() -> None:
-    with pytest.raises(TypeError, match="not int"):
+    with pytest.raises(TypeError, match="char must be a str"):
         is_dash(45)  # type: ignore[arg-type]
 
 
@@ -146,7 +146,7 @@ def test_streaming_is_lazy_but_checks_options_eagerly() -> None:
     assert next(stream) == "-"
     with pytest.raises(ValueError):
         iter_fold_dashes([], "nope")  # type: ignore[arg-type]
-    with pytest.raises(TypeError, match="must be a str, not bytes"):
+    with pytest.raises(TypeError, match="must be a str"):
         list(iter_fold_dashes([b"a"]))  # type: ignore[list-item]
 
 

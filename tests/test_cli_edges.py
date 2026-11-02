@@ -95,7 +95,7 @@ def test_a_missing_stdout_is_an_error(
     assert streams.err.getvalue() == "unidash: no standard output\n"
 
 
-def test_a_huge_form_value_is_quoted_short(
+def test_a_huge_form_value_is_omitted(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     with pytest.raises(SystemExit) as raised:
@@ -103,7 +103,7 @@ def test_a_huge_form_value_is_quoted_short(
     assert raised.value.code == 2
     error = capsys.readouterr().err
     assert len(error) < 500, len(error)
-    assert "(20000 characters)" in error
+    assert "SSSS" not in error
     assert "ascii, tex, typographic" in error
 
 

@@ -87,14 +87,14 @@ def test_dash_hit_is_a_named_tuple_that_pickles_as_public() -> None:
 
 @pytest.mark.parametrize("function", FOLDERS, ids=lambda f: f.__name__)
 def test_every_folder_checks_its_options_the_same_way(function: Callable[..., Any]) -> None:
-    with pytest.raises(ValueError, match=r"^form must be one of ascii, tex, typographic, not 'x'$"):
+    with pytest.raises(ValueError, match=r"^form must be one of ascii, tex, typographic$"):
         _call(function, "a", "x")
-    with pytest.raises(TypeError, match=r"^form must be a str, not NoneType$"):
+    with pytest.raises(TypeError, match=r"^form must be a str$"):
         _call(function, "a", None)
     for flag in ("script_hyphens", "keep_soft_hyphens"):
-        with pytest.raises(TypeError, match=f"^{flag} must be a bool, not str$"):
+        with pytest.raises(TypeError, match=f"^{flag} must be a bool$"):
             _call(function, "a", **{flag: "yes"})
-        with pytest.raises(TypeError, match=f"^{flag} must be a bool, not int$"):
+        with pytest.raises(TypeError, match=f"^{flag} must be a bool$"):
             _call(function, "a", **{flag: 0})
     with pytest.raises(TypeError):
         _call(function, "a", "ascii", True)
@@ -102,42 +102,30 @@ def test_every_folder_checks_its_options_the_same_way(function: Callable[..., An
 
 @pytest.mark.parametrize("function", [fold_dashes, find_dashes, to_ascii_punct])
 def test_text_must_be_a_str(function: Callable[..., Any]) -> None:
-    for bad, name in ((b"a", "bytes"), (None, "NoneType"), (["a"], "list")):
-        with pytest.raises(TypeError, match=f"^text must be a str, not {name}$"):
+    for bad in (b"a", None, ["a"]):
+        with pytest.raises(TypeError, match=r"^text must be a str$"):
             function(bad)
 
 
 def test_a_bad_chunk_is_named_when_it_is_read() -> None:
     stream = iter_fold_dashes(["a", 5])  # type: ignore[list-item]
     assert next(stream) == "a"
-    with pytest.raises(TypeError, match=r"^chunk must be a str, not int$"):
+    with pytest.raises(TypeError, match=r"^chunk must be a str$"):
         next(stream)
 
 
 def test_is_dash_errors() -> None:
-    with pytest.raises(TypeError, match=r"^char must be a str, not int$"):
+    with pytest.raises(TypeError, match=r"^char must be a str$"):
         is_dash(45)  # type: ignore[arg-type]
     for bad, count in (("", 0), ("--", 2), (EM * 3, 3)):
         with pytest.raises(ValueError, match=f"^char must be a single character, not {count} "):
             is_dash(bad)
 
 
-@pytest.mark.parametrize("size", [41, 1000, 1_000_000])
-def test_messages_quote_at_most_forty_characters(size: int) -> None:
-    form = "x" * size
-    with pytest.raises(ValueError) as raised:
-        fold_dashes("a", form)  # type: ignore[arg-type]
-    message = str(raised.value)
-    assert message.endswith(f"not {'x' * 40!r}... ({size} characters)")
-    assert len(message) < 120
-
-
-def test_a_forty_character_form_is_quoted_whole() -> None:
-    with pytest.raises(ValueError, match=f"not {'y' * 40!r}$"):
-        fold_dashes("a", "y" * 40)  # type: ignore[arg-type]
-
-
 class Sneaky(str):
+    def __str__(self) -> str:
+        raise AssertionError("string conversion must not run")
+
     def translate(self, table: Any) -> str:
         return "overridden"
 
@@ -163,7 +151,7 @@ def test_str_subclasses_are_read_as_their_characters() -> None:
 
 
 def test_a_str_subclass_form_must_spell_a_form() -> None:
-    with pytest.raises(ValueError, match="not 'zzz'"):
+    with pytest.raises(ValueError, match=r"^form must be one of ascii, tex, typographic$"):
         fold_dashes(EM, Sneaky("zzz"))  # type: ignore[arg-type]
     assert fold_dashes(EM, Sneaky("tex")) == "---"  # type: ignore[arg-type]
 

@@ -29,8 +29,8 @@ objects. The four README examples and its CLI transcript execute in `tests/test_
 snippets verify inferred results and rejected calls. No public result leaks `Any`.
 
 Errors retain the documented `TypeError` and `ValueError` families. A non-string form now
-raises `TypeError`, value quotations are bounded at 40 characters, subclass overrides do
-not change string interpretation, and chunk errors name the chunk. All changes from the
+raises `TypeError`, rejected form values and class names are omitted, subclass overrides
+do not change string interpretation, and chunk errors name the chunk. All changes from the
 published 0.2.0 release, including CLI fixes, are in CHANGELOG and GUIDE.
 
 ## Ground truth (item 7)
@@ -155,6 +155,40 @@ The eight earlier QA rounds and their fixes are preserved in CERT-1.0-QA.md. The
 not finish with five passing lenses. The round-2 lens b PASS predates later code changes
 and subsequent findings, so it is not a current approval. No independent reviewer has
 passed the final commit. These checks remain for the next stage.
+
+### QA lenses, round 1 fixes (2026-11-02)
+
+Base: `5da447254e0739a9c6014b171baed37bc8b36ce9`. Fix commit: the commit containing this
+section, identified by Git revision `:/^fix round one qa findings$` on `release/1.0.0`.
+All seven reported findings are addressed; no finding is disputed. Independent lens
+re-verification remains pending. Public signatures, defaults and exception types are unchanged.
+
+| Finding | Change and verification |
+| --- | --- |
+| B-001 | GUIDE distinguishes HTML blocks and attributes from inline HTML text. Six new converter cases pass with Markdown 3.11.2 and markdown-it-py 4.2.0. |
+| C-01 | API and CLI form errors omit rejected values and list allowed forms. Short and long synthetic secret markers are covered across all four form-taking APIs and CLI subprocesses. |
+| C-02 | Type errors omit received class names for text, char, chunk, form and both flags. Million-character and control-character class names produce fixed diagnostics. |
+| E-01 | The hostile str subclass now raises from `__str__`; the existing character and form contracts still pass. M16 fails `test_str_subclasses_are_read_as_their_characters`. |
+| E-02 | Complete chunk sequences include empty inputs and chunks emptied by folding. M19 fails `test_stream_preserves_every_empty_chunk`. |
+| E-03 | No hits are constructed before iteration, and each next call constructs one. M20 fails `test_find_constructs_only_the_hit_requested`. |
+| E-04 | Subprocess tests preserve repeated filenames and order in filter and check modes. M35 fails `test_repeated_files_preserve_multiplicity_and_order`. |
+
+Diagnostic contracts were added first: the original implementation produced 24 failures
+and four passes. After fixing diagnostics, the focused contracts and HTML tests pass
+(74 passed). Each of M16, M19, M20 and M35 was injected separately in a scratch copy:
+pytest exited 1 on the named contract; restoring each original file made its test pass.
+The four coverage findings required no production behavior change. CHANGELOG records
+both diagnostic changes and the documentation and contract corrections.
+
+Final local gates: `ruff format --check .`, `ruff check .`, `mypy --strict src`,
+`mypy --strict src tests` and the full pytest suite exit 0 on CPython 3.14.6:
+**351 passed, 11 skipped** in 123.05 seconds.
+Pytest includes the wheel build, installed API/CLI checks and PyPI 0.2.0 upgrade, with a
+300-second per-test timeout. Optional Unicode source files are absent in this checkout;
+their nine tests skip, along with the two platform/path skips documented above.
+Closed-reader tests use an ordinary scratch sink via a startup hook instead of a device.
+Logs and mutation repros are under `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r1/`.
+An initial full run found the guide over its line limit; the shortened guide is rechecked.
 
 ## Release status (item 17)
 

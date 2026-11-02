@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import BinaryIO, NoReturn
 
-from ._checks import quote
+from ._checks import check_form
 from ._hit import scan
 from ._mapping import PUNCTUATION_TABLE
 from ._tables import FORMS, Table, cached_table, translate_blocks
@@ -52,11 +52,11 @@ class _Parser(argparse.ArgumentParser):
 
 
 def _form(value: str) -> str:
-    # argparse's own choices error would echo a huge value whole; quote it like the library.
-    if value not in FORMS:
-        choices = ", ".join(FORMS)
-        raise argparse.ArgumentTypeError(f"invalid choice: {quote(value)} (choose from {choices})")
-    return value
+    # The shared diagnostic omits values that may contain sensitive input.
+    try:
+        return check_form(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from None
 
 
 def _parser() -> argparse.ArgumentParser:

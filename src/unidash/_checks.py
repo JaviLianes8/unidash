@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from ._tables import FORMS, Table, cached_table
 
-# Error messages quote at most this many characters of a value the caller passed.
-QUOTE_LIMIT = 40
-
 
 def exact_str(value: str) -> str:
     # A str subclass may override translate or iteration; work on the plain characters.
@@ -15,26 +12,20 @@ def exact_str(value: str) -> str:
 
 def require_text(text: object, label: str = "text") -> str:
     if not isinstance(text, str):
-        raise TypeError(f"{label} must be a str, not {type(text).__name__}")
+        raise TypeError(f"{label} must be a str")
     return exact_str(text)
-
-
-def quote(value: str) -> str:
-    if len(value) <= QUOTE_LIMIT:
-        return repr(value)
-    return f"{value[:QUOTE_LIMIT]!r}... ({len(value)} characters)"
 
 
 def check_form(form: object) -> str:
     text = require_text(form, "form")
     if text not in FORMS:
-        raise ValueError(f"form must be one of {', '.join(FORMS)}, not {quote(text)}")
+        raise ValueError(f"form must be one of {', '.join(FORMS)}")
     return text
 
 
 def check_flag(label: str, flag: object) -> bool:
     if not isinstance(flag, bool):
-        raise TypeError(f"{label} must be a bool, not {type(flag).__name__}")
+        raise TypeError(f"{label} must be a bool")
     return flag is True
 
 

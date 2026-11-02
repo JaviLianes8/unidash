@@ -112,7 +112,7 @@ def test_script_hyphens_are_left_to_their_script() -> None:
 
 
 def test_error_names_the_wrong_type() -> None:
-    with pytest.raises(TypeError, match="not int"):
+    with pytest.raises(TypeError, match="text must be a str"):
         to_ascii_punct(123)  # type: ignore[arg-type]
 
 

@@ -16,10 +16,12 @@ moves a character that is already classified.
 
 ### Changed
 
-- A `form` that is not a str now raises `TypeError` (`form must be a str, not list`); an
+- A `form` that is not a str now raises `TypeError` (`form must be a str`); an
   unknown str still raises `ValueError`.
-- Error messages quote at most 40 characters of the value passed, so a huge `form` string
-  no longer ends up whole in the message.
+- Invalid-form errors list the parameter and allowed forms without echoing the received
+  value, so sensitive input does not appear in API exceptions or CLI stderr.
+- Type errors name the parameter and required type, omitting received class names so
+  arbitrarily large names and control characters cannot inflate or alter diagnostics.
 - A `str` subclass is read as its plain characters: an overridden `translate` or `__iter__`
   can no longer change what `fold_dashes`, `find_dashes`, `iter_fold_dashes`, `is_dash` or
   `to_ascii_punct` return, and a subclass whose `__eq__` matches anything is no longer
@@ -31,9 +33,8 @@ moves a character that is already classified.
 - The command line reads stdin only for `-`, so files are processed when there is no
   standard input. A missing stdin (for `-`) or stdout is reported on stderr with exit 2
   instead of a traceback.
-- An invalid `--form` value is quoted to at most 40 characters in the usage error, and any
-  usage error message longer than 200 characters (such as one naming a huge unknown option)
-  is cut there.
+- Any usage error message longer than 200 characters (such as one naming a huge unknown
+  option) is cut there.
 - With no standard error, the command line drops its diagnostics instead of writing them
   into the folded output or the `--check` report.
 - `--punct` refuses any explicit `--form`, `--form ascii` included; before, only a form
@@ -44,6 +45,10 @@ moves a character that is already classified.
 
 ### Fixed
 
+- The guide distinguishes preserved hyphens in Markdown code spans, HTML blocks and
+  attributes from typographic substitutions in inline HTML text, including `<code>`.
+- Contracts now cover overridden `str.__str__`, empty stream chunks, lazy hit construction
+  and repeated CLI filenames in their original order; these behaviors are unchanged.
 - `fold_dashes` and `iter_fold_dashes` with the `tex` form, `to_ascii_punct` and the command
   line take linear time on long text where most characters grow (the two-em and three-em
   dashes, the ellipsis); they were quadratic.

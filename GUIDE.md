@@ -50,7 +50,9 @@ punctuation and the spaces on each side chosen apart. Other neighbours can be ma
 backslash right before a dash escapes its first hyphen in Python-Markdown, markdown-it-py and
 smartypants (`a\---b` reads back as a hyphen and an en dash), markdown-it-py turns a `+`
 right before a dash into `±`, and Python-Markdown and markdown-it-py leave the hyphens inside
-code spans and raw HTML as written. Their block rules apply too and depend on the line
+Markdown code spans, HTML blocks and HTML attribute values as written. Text in inline
+HTML elements still receives typographic substitutions, even in `<code>` or `<span>`:
+`<code>a---b</code>` renders with an em dash. Their block rules also depend on the line
 before. A line that starts a block (it starts the text or follows a blank line, a heading, a
 thematic break or an indented code line) is a code block, whose hyphens stay as written, when
 it is indented four spaces (or a tab), and a thematic break, `<hr />`, when it holds only
@@ -82,10 +84,10 @@ U+2E3B as two and three em dashes; Python-Markdown and markdown-it-py leave them
 
 ## `iter_fold_dashes(chunks, form="ascii", *, ...)`
 
-Takes any iterable of `str` and returns an iterator that folds one chunk at a time, with the
-same options as `fold_dashes`. The options are checked when it is called; the chunks are
-read lazily and each must be a `str`. `"".join(iter_fold_dashes(chunks))` equals
-`fold_dashes("".join(chunks))` for every split of the text.
+Takes an iterable of `str` and lazily folds each chunk with the same options as `fold_dashes`.
+Options are checked when called; each chunk is checked when read. Each input chunk produces
+one output chunk, including empty chunks. `"".join(iter_fold_dashes(chunks))` equals
+`fold_dashes("".join(chunks))` for every split.
 
 ## `find_dashes(text, form="ascii", *, ...)` and `DashHit`
 
@@ -145,9 +147,8 @@ list.
 | `script_hyphens` or `keep_soft_hyphens` is not a `bool` | `TypeError` |
 | `is_dash` gets a `str` that is not exactly one character | `ValueError` |
 
-Messages name the parameter and the type or value received, and quote at most 40
-characters of a value. A `str` subclass is accepted and read as its plain characters; its
-own methods are not called.
+Messages name the parameter and required type or allowed forms, omitting rejected values
+and class names. A `str` subclass is read as plain characters; its methods are not called.
 
 ## What is not a dash
 
@@ -185,9 +186,8 @@ unidash [--form {ascii,tex,typographic}] [--script-hyphens] [--keep-soft-hyphens
   and last 100.
 - Stdin is read only for `-`. With no standard input, `-` is reported as an unreadable
   file; with no standard output the tool stops at once with exit 2.
-- An invalid `--form` value is quoted to at most 40 characters in the usage error, and the
-  form names are exact (`ASCII` is an error). Any usage error message longer than 200
-  characters, such as one naming a huge unknown option, is cut there.
+- An invalid `--form` diagnostic lists the allowed forms without quoting the rejected value.
+  Form names are exact (`ASCII` is an error). Usage errors longer than 200 characters are cut.
 - Diagnostics go only to stderr. With no standard error they are dropped, never written
   into the output.
 - Long input takes linear time.

@@ -7,6 +7,7 @@ test_oracles.py; each test skips when either package is absent.
 from __future__ import annotations
 
 import html
+from collections.abc import Callable
 
 import pytest
 
@@ -28,7 +29,7 @@ def _markdown_it(text: str) -> str:
     return html.unescape(md.render(fold_dashes(text, "tex"))).strip()
 
 
-def test_raw_html_keeps_the_hyphens_as_written() -> None:
+def test_raw_html_blocks_keep_the_hyphens_as_written() -> None:
     for tag in (
         "<div>a" + EN + "b</div>",
         "<p>a " + EM + " b</p>",
@@ -36,6 +37,23 @@ def test_raw_html_keeps_the_hyphens_as_written() -> None:
         "<!-- a " + EM + " b -->",
     ):
         assert _python_markdown(tag) == _markdown_it(tag) == fold_dashes(tag, "tex")
+
+
+@pytest.mark.parametrize("render", [_python_markdown, _markdown_it])
+@pytest.mark.parametrize("tag", ["code", "span"])
+def test_inline_html_text_receives_typographic_substitutions(
+    render: Callable[[str], str], tag: str
+) -> None:
+    text = f"<{tag}>a{EM}b</{tag}>"
+    assert render(text) == f"<p>{text}</p>"
+
+
+@pytest.mark.parametrize("render", [_python_markdown, _markdown_it])
+def test_html_attributes_and_markdown_code_spans_keep_folded_hyphens(
+    render: Callable[[str], str],
+) -> None:
+    assert render(f'<span title="a{EM}b">x</span>') == '<p><span title="a---b">x</span></p>'
+    assert render(f"`a{EM}b`") == "<p><code>a---b</code></p>"
 
 
 def test_only_python_markdown_ends_html_that_markdown_it_ends_at_a_blank_line() -> None:
