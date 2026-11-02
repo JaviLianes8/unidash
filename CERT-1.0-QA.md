@@ -1,6 +1,6 @@
-# unidash 1.0.0 QA rounds 1 to 7 (item 19)
+# unidash 1.0.0 QA rounds 1 to 8 (item 19)
 
-The findings of the first seven QA rounds and how each was fixed; the summary and the
+The findings of the first eight QA rounds and how each was fixed; the summary and the
 latest round are in CERT-1.0-REPORT.md.
 
 Round 1, on bbd84b8: lenses a (API and docs), b (ground truth), c (adversarial), d (packaging and
@@ -104,3 +104,21 @@ every kind of line, and code lines, headings and thematic breaks before an inden
 lone en dash, dashes three spaces apart, `Title` and an en dash, and a two-line paragraph.
 
 Disputed findings: none.
+
+Round 8, on 3b85a49: lenses a and b confirmed the round 7 fix (`<div>` and `<p>` lines, the
+code line that starts a block, 20 render tests passing) and lens b found 7 of its 10 new
+probes in line with the GUIDE. Two more gaps in the GUIDE block rules, fixed in 01694d2; no
+library code changed, so the CHANGELOG has nothing to add.
+
+| Finding | Fix | Proof |
+| --- | --- | --- |
+| a-N5, b-I1 (low, medium): markdown-it-py takes the next lines into the HTML block only for HTML that ends at a blank line (CommonMark types 6 and 7, such as `<div>`, `<p>`, `<hr>`); a comment and a `<pre>`, `<script>`, `<style>` or `<textarea>` element end on their closing line, so there both converters start a new block on the next line | GUIDE: after a line of only HTML, both start a new block if it closes a comment, a `<pre>`, `<script>`, `<style>` or `<textarea>` element, a `<?` instruction, a `<!DOCTYPE` or a CDATA section; only Python-Markdown does after block-level HTML that closes what it opens (`<div>x</div>`, `<hr>`). Found while checking the fix: under a tag left open (`<div>`) both take the next lines into the HTML block, and `<!ELEMENT` or text after the closing tag behave otherwise in Python-Markdown, so the GUIDE names only the cases checked | new `tests/test_markdown_html.py` (the raw HTML test moved there so both files stay under 200 lines): thirteen such blocks, on one line and over several, each over an en dash, an em dash, `Title` and an en dash, and an indented line, the same full render in both converters; `<hr>`, `<hr />`, `<section>` and a nested `<div>` added to the markdown-it-py raw case; `<div>`, `<p>` and `<div>x` left open |
+| a-N6 (low): in markdown-it-py dashes indented to the text of a list item belong to the item, so `- item` over two spaces and an em dash gives `<h2>item</h2>` inside the item, not the list and `<hr />` | GUIDE: the list and quote heading sentence holds for dashes at the start of the line; markdown-it-py puts dashes indented to the item text in the item (touching ones make its text an `<h2>`, others that fold to three hyphens or more an `<hr />`, both inside the item); Python-Markdown applies the thematic break rule to dashes indented one to three spaces under an item or a quote | `tests/test_markdown_blocks.py`: `- item` over two, three and five spaces and a lone en dash, an em dash, two en dashes or an en and an em dash; `1. item` over three spaces and an em dash; two spaced en dashes inside the item; one space (less than the item text); in Python-Markdown, one to three spaces under `- item` and `> q`, with the quote case through both converters |
+
+To keep the GUIDE at 200 lines the Threads paragraph became a bullet of the stability promise
+and the `DashHit` pickle sentence joined the named tuple line; their content is unchanged. The
+new sentences were checked against more renders than the tests pin: `- item`, `* item`,
+`1. item` and `> q` over zero to six spaces and four dash lines, and over 25 kinds of HTML
+line over an en dash and an em dash, most also over `Title` and an en dash.
+
+Disputed findings: none. Next: the five lenses on the round 8 code, then the independent review.

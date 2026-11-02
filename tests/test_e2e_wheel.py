@@ -88,11 +88,18 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     venv.create(env_dir, with_pip=True)
     bindir = env_dir / ("Scripts" if sys.platform == "win32" else "bin")
     python = bindir / "python"
-    _run(python, "-m", "pip", "install", "-q", wheel)
-
-    # Run from an empty folder so the source tree cannot shadow the install.
     work = tmp_path / "work"
     work.mkdir()
+    previous = None
+    consumer = ROOT / "tests" / "upgrade_consumer.py"
+    if os.environ.get("UNIDASH_E2E_PYPI") == "1":
+        _run(python, "-m", "pip", "install", "-q", "unidash==0.2.0")
+        previous = _run(python, "-I", consumer, cwd=work)
+    _run(python, "-m", "pip", "install", "-q", wheel)
+    if previous is not None:
+        assert _run(python, "-I", consumer, cwd=work) == previous
+
+    # Run from an empty folder so the source tree cannot shadow the install.
     assert _run(python, "-I", "-c", PROGRAM, cwd=work).decode().splitlines() == ["e2e ok"]
 
     (work / "a.md").write_bytes(("x" + chr(0x2014) + "y\n").encode("utf-8"))

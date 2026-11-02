@@ -6,10 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-10-23
+## [1.0.0] - 2026-11-02
 
-The first release published on PyPI; 0.1.0 and 0.2.0 were development versions. The public
-API is now stable: the nine names in `unidash.__all__`, their parameter names, defaults,
+The first stable release, upgrading the 0.2.0 release published on PyPI on 2026-10-26.
+The public API is now stable: the nine names in `unidash.__all__`, their parameter names, defaults,
 results and error types are kept for every 1.x release. The dash classification follows
 Unicode 18.0; a later Unicode version that adds dashes is taken in a minor release and never
 moves a character that is already classified.
@@ -65,7 +65,7 @@ moves a character that is already classified.
 
 ## [0.2.0] - 2026-10-13
 
-Development version, not published to PyPI.
+Initially a development version; published to PyPI on 2026-10-26.
 
 ### Added
 

@@ -1,187 +1,141 @@
 # unidash 1.0.0 certification report
 
-The 1.0.0 certification bar applied to unidash. PyPI has no `unidash` release
-(`https://pypi.org/pypi/unidash/json` answered 404 on 2026-10-23), so there is no upgrade
-path to check; every change since 0.2.0 is still listed in the CHANGELOG.
+Preparation resumed on 2026-11-02 from 6f49665. Earlier commits and evidence are retained.
+No library implementation changed in this preparation update.
 
 Progress:
-- [x] Branch `release/1.0.0` created from `main` (a7a06bb, 0.2.0)
-- [x] Baseline gates on 0.2.0
-- [x] API review and 1.0.0 changes (item 1)
-- [x] Errors, typing, docstrings and doctests (items 2 to 5)
-- [x] Ground truth: Unicode data fetched live, independent oracles (item 7)
-- [x] Contract, fuzz and author mutation round (items 6, 9, 18)
-- [x] Docs: README, GUIDE, CHANGELOG (items 11, 12)
-- [x] Packaging, e2e, every Python (items 8, 10, 13, 14)
-- [x] Gates (item 15)
-- [x] PR and trace guard
-- [x] QA rounds 1 and 2: every finding fixed
-- [x] Second author mutation round on the fix code, final matrix and gates at d9dc54f
-- [x] QA round 3 (five lenses on 6fa3a04): every finding fixed
-- [x] Third mutation round, matrix and gates on the round 3 code (6b342cc)
-- [x] QA round 4 (five lenses on 46ebbae): every finding fixed, fourth mutation round,
-  matrix and gates on the fix (2bd07b5)
-- [x] QA round 5 (lenses on ef69a71): every finding fixed in the GUIDE, gates on the
-  fix (31abecc)
-- [x] QA round 6 (lenses on 2ab1f9e): every finding fixed in the GUIDE, gates on the
-  fix (daaba06)
-- [x] QA round 7 (lenses on 99eaeae): every finding fixed in the GUIDE, gates on the
-  fix (6b7d5b6)
-- [x] QA round 8 (lenses on 3b85a49): every finding fixed in the GUIDE, gates on the
-  fix (01694d2)
-- [ ] Five QA lenses passing on the final code (item 19)
-- [ ] Independent reviewer (item 16)
+- [x] Public API, errors, typing, examples and contracts (items 1 to 6)
+- [x] Fresh Unicode sources and reference programs (item 7)
+- [x] Built-wheel API, CLI and real PyPI 0.2.0 upgrade (item 8)
+- [x] Seeded fuzz and scaling contracts (item 9)
+- [ ] Available interpreter inventory and installed-wheel suite (item 10)
+- [x] README, dated changelog, metadata and archive inspection (items 11 to 14)
+- [x] Four gates and strict typing of tests (item 15)
+- [x] Twelve additional mutations, all killed (item 18)
+- [ ] Independent reviewer (item 16), merge and publish (item 17), five QA lenses (item 19)
 
-## Scorecard
+## API and contracts (items 1 to 6)
 
-| # | Item | Result |
-| --- | --- | --- |
-| 1 | Public API reviewed for stability | PASS: the nine names of 0.2.0 kept, signatures pinned; changes in CHANGELOG and GUIDE |
-| 2 | `__all__` exact, no private imports in docs | PASS: the package namespace equals `__all__` (stray `annotations` removed) |
-| 3 | Docstrings with runnable examples, doctests | PASS: 9 doctests cover every public name; the 4 README blocks run as tests |
-| 4 | Typed end to end | PASS: `mypy --strict src tests`, `py.typed`, typing checked from a consumer snippet |
-| 5 | Typed, documented, bounded errors | PASS: `TypeError` and `ValueError` as in the GUIDE table, at most 40 quoted characters |
-| 6 | Contract tests of every public name | PASS: `tests/test_contract_api.py` and the per-area tests |
-| 7 | Real ground truth | PASS: Unicode 18.0 files fetched 2026-10-23, regex, four typography converters |
-| 8 | Real e2e from the wheel | PASS: wheel in a fresh venv, API and CLI by subprocess; no PyPI release to upgrade from |
-| 9 | Seeded fuzz, no crash, hang or blowup | PASS: `tests/test_fuzz.py`; linear on growing input since QA round 1 (`tests/test_scale.py`) |
-| 10 | Supported Pythons | PASS: CPython 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2, 3.14.2t, at 2bd07b5 |
-| 11 | README and `twine check` | PASS: `twine check --strict` on wheel and sdist, absolute links |
-| 12 | Dated CHANGELOG section | PASS: 1.0.0, 2026-10-23 |
-| 13 | pyproject 1.0.0, Production/Stable | PASS |
-| 14 | sdist and wheel contents | PASS |
-| 15 | Gates each exit 0 | PASS: at 01694d2, see Gates |
-| 16 | Independent reviewer | pending (next stage) |
-| 17 | PR and trace guard | PR from `release/1.0.0`, trace guard CLEAN; merge and publish left to the maintainer |
-| 18 | Contracts bite (mutations) | PASS: four author rounds, all killed (CERT-1.0-MUTATIONS.md) |
-| 19 | Five independent QA lenses | pending (next stage) |
+The nine public names of 0.2.0 are retained with their signatures and defaults:
+`DASHES`, `DashHit`, `Form`, `dash_table`, `find_dashes`, `fold_dashes`, `is_dash`,
+`iter_fold_dashes` and `to_ascii_punct`. `__all__` matches the package namespace exactly.
+`tests/test_contract.py` and `tests/test_contract_api.py` pin that surface, field types,
+pickling, input checks, exact form names, eager option checking and lazy chunk iteration.
+The per-area tests pin mapping values, every switch, text positions and CLI exit codes.
 
-## Baseline on 0.2.0 (before any change)
+Every public name has a runnable example; nine doctests cover the package and its public
+objects. The four README examples and its CLI transcript execute in `tests/test_docs.py`.
+`mypy --strict src tests` passes, the installed package includes `py.typed`, and consumer
+snippets verify inferred results and rejected calls. No public result leaks `Any`.
 
-On this PC, CPython 3.13.2, with the Unicode data fetched: `ruff format --check .`,
-`ruff check .` and `mypy --strict src tests` exit 0; `pytest` 126 passed, 2 skipped (the
-installed-wheel test, which needs `UNIDASH_E2E=1`, and the POSIX file name test); no
-doctests existed.
-
-Defects found in 0.2.0 by reading and then reproducing: `fold_dashes("a", "x" * 100000)`
-raised a `ValueError` holding the whole string (100,051 characters); a `str` subclass that
-overrides `translate` changed what `fold_dashes` returned, one that overrides `__iter__` hid
-every `find_dashes` hit, and one whose `__eq__` matches anything passed as a form; a list as
-`form` raised `ValueError`; `DashHit` pickled as a private module; no public docstring had a
-runnable example; `scripts/release.ps1` could publish only one version and built from a dirty
-tree.
-
-## API review (item 1)
-
-Kept: the nine public names of 0.2.0 with their parameter names, defaults and keyword-only
-options, now pinned by `tests/test_contract_api.py`. Changed, all in the CHANGELOG: a
-non-str `form` raises `TypeError`; messages quote at most 40 characters; a `str` subclass is
-read as its plain characters (its `translate`, `__iter__` and `__eq__` are never called);
-the chunk error names `chunk`; `DashHit` pickles as `unidash.DashHit`; `python -m unidash`
-runs only as a program. Internal: argument checks moved to `_checks.py` and the position
-scan to `_hit.py`, so every file stays under 200 lines with its examples. The GUIDE states
-the versioning promise, including how a later Unicode version is taken in.
+Errors retain the documented `TypeError` and `ValueError` families. A non-string form now
+raises `TypeError`, value quotations are bounded at 40 characters, subclass overrides do
+not change string interpretation, and chunk errors name the chunk. All changes from the
+published 0.2.0 release, including CLI fixes, are in CHANGELOG and GUIDE.
 
 ## Ground truth (item 7)
 
-Fetched on 2026-10-23 by `scripts/fetch_vectors.py` into the ignored
-`tests/vectors/unicode` folder; size and SHA-256 match `MANIFEST.txt`. Nothing fetched is
-committed or shipped.
+On 2026-11-02, `scripts/fetch_vectors.py` fetched these files into a scratch copy of the
+source tree and verified their sizes and SHA-256 against the tracked manifest:
 
-- UnicodeData.txt and PropList.txt 18.0.0 (https://www.unicode.org/Public/18.0.0/ucd/):
-  the three classes are exactly the Dash property, cover the 27 Pd code points, the stored
-  names match, and the `typographic` targets are exactly the `<small>`, `<vertical>` and
-  `<wide>` decompositions in the file (U+2011 `<noBreak>` kept on purpose, asserted).
-- confusables.txt 18.0.0 (https://www.unicode.org/Public/18.0.0/security/confusables.txt):
-  every confusable of `-` folds, is a letter or a mark, or is a listed non-dash; ASCII targets agree.
-- regex 2026.9.29, an independent implementation of the Unicode properties: `\p{Dash}` over
-  every code point equals `DASHES` (31), and the 27 `\p{Pd}` code points are all classified.
-- Four typography converters, 600 seeded texts each of words (letters, digits, CJK) with
-  sentence punctuation, joined by dashes and spaces: Python-Markdown 3.11.2 `smarty` (3.9 on
-  Python 3.10), the markdown-it-py 4.2.0 typographer, docutils 0.23 smartquotes and
-  smartypants 2.0.2 (`Attr.D`) read the `tex` form back as the original en and em dashes; docutils and
-  smartypants read the two-em and three-em widths as two and three em dashes.
-- The README comparison, run on 2026-10-23: unidecode 1.4.0 and anyascii 0.3.3 turn `café`
-  into `cafe`, unidecode writes the em dash as `--`, and NFKC on CPython 3.13.2 keeps U+2013,
-  U+2014 and U+2212 while mapping U+FB01 to `fi` and U+00B2 to `2`.
+- https://www.unicode.org/Public/18.0.0/ucd/UnicodeData.txt
+- https://www.unicode.org/Public/18.0.0/ucd/PropList.txt
+- https://www.unicode.org/Public/18.0.0/security/confusables.txt
 
-## Fuzz and hostile input (item 9)
+`tests/vectors/unicode/MANIFEST.txt` records revision, URLs, sizes, hashes and Unicode
+License v3. Third-party contents remain outside the repository and distribution archives.
+Tests derive Dash membership, Pd membership, names, compatibility decompositions and
+confusable targets from those fetched files. The sources are not invented test vectors.
+Hand-written boundary expectations and generated random inputs are separate contracts.
 
-`tests/test_fuzz.py`, three seeds over text mixing every dash, CR, LF, CRLF, BOM, NUL, lone
-surrogates, the separators that do not end a line (VT, FF, U+0085, U+2028 and U+2029),
-astral and random code points: the fold is per character, idempotent and equal
-to `str.translate` with `dash_table`; the ASCII forms leave no foldable dash; every
-`find_dashes` position equals an independent count (split on line ends); chunked folding
-equals whole folding; `to_ascii_punct` is idempotent; no letter, mark or digit of any code
-point changes; seven input shapes scale linearly from 50,000 to 400,000 characters; a
-million CRs are counted; four threads agree with the serial results. `test_cli.py` checks
-100,000 hits on stdin; a 1,000,000 character form string gives a short message.
+Independent reference programs pinned in `requirements-oracles.txt` run in this session:
+regex 2026.9.29 scans all code points for Dash and Pd; Markdown 3.11.2, markdown-it-py 4.2.0,
+docutils 0.23 and smartypants 2.0.2 check TeX conventions on seeded texts. Full render tests
+pin the documented Markdown block exceptions. Prior source/reference evidence and its
+limitations remain recorded in the earlier commits and CERT-1.0-QA.md.
 
-## Author mutation rounds (item 18)
+## Fuzz and robustness (item 9)
 
-Each mutant applied alone to a copy of the tree with the fetched data and the oracle packages,
-full suite with `-x`; the unmutated tree passed first. The tables, with the first test that
-failed for each mutant, are in CERT-1.0-MUTATIONS.md (not shipped).
+`tests/test_fuzz.py` exercises seeded mixed Unicode, dashes, CR/LF/CRLF, BOM, NUL,
+surrogates and astral characters: translation agreement, idempotence, ASCII targets,
+chunk equivalence, independent positions and preservation of letters, marks and digits.
+`tests/test_scale.py` checks growing input shapes and a million CR characters; contracts
+also cover threads, huge invalid forms, 100,000 CLI hits and closed or missing streams.
+All pytest runs use pytest-timeout with a 300-second per-test limit and scratch basetemps.
 
-- First round, 37 mutants of the library and the CLI at c76b0e7: all killed.
-- Second round, 15 mutants of the QA round 1 and 2 fixes at d9dc54f: all killed.
-- Third round, 14 mutants of the QA round 3 fixes at 6b342cc, including the two that QA lens e
-  found surviving at 6fa3a04: all killed.
-- Fourth round, 6 mutants of the QA round 4 fix at 2bd07b5, including the two that lens e
-  found surviving at 46ebbae (P21, P30): all killed.
+## Packaging and upgrade (items 8, 11 to 14)
 
-## Packaging, e2e and Pythons (items 8, 10, 13, 14)
+https://pypi.org/pypi/unidash/json returned HTTP 200 on 2026-11-02. Its current version is
+0.2.0, uploaded on 2026-10-26. This supersedes the earlier report's 2026-10-23 HTTP 404.
+The 1.0.0 CHANGELOG is dated 2026-11-02 and corrects that publication history.
 
-- At 6101860 on another machine (CPython 3.14.2), fresh clone, `UNIDASH_E2E=1`: the e2e
-  test builds the wheel and the sdist, inspects both, installs the wheel in a fresh venv,
-  drives the API from an empty folder with `-I`, and runs the `unidash` script and
-  `python -m unidash` by subprocess (filter, `--form`, `--punct`, `--script-hyphens`,
-  `--check` on a file and on stdin, `--version`, non UTF-8 input exits 2).
-- At 2bd07b5 (round 4 code) on this PC, as at 6b342cc, d9dc54f and 25a6b63 before: wheel and sdist
-  built from a fresh clone, `twine check --strict` passed for both; for each of CPython
-  3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2 and 3.14.2 free-threaded, the wheel in a fresh venv
-  and the sdist's own suite with `src` removed (fetched data, oracles and mypy present): 287
-  collected, all passed except the opt-in e2e and the POSIX file name test, plus the 9
-  doctests of the installed package. 3.8 and 3.9 are below `requires-python`.
-- Wheel: the ten modules, `py.typed`, METADATA, the entry point
-  `unidash = unidash._cli:main` and `licenses/LICENSE`. Sdist: sources, tests, scripts,
-  docs, LICENSE and the data manifest; no fetched data, no report files, no caches. The only
-  Unicode content in the code is character names and property membership, which are facts.
-- No PyPI release exists, so there is no upgrade path to check.
+With `UNIDASH_E2E=1` and `UNIDASH_E2E_PYPI=1`, `tests/test_e2e_wheel.py` builds the wheel
+and sdist, creates a fresh venv, installs the actual PyPI 0.2.0, then upgrades that same
+venv to the built 1.0.0 wheel. The external consumer runs with `-I` from an empty folder.
+`tests/upgrade_consumer.py` compares 2,400 seeded combinations (200 texts, three forms,
+four flag combinations), including fold, chunk, table, hit, punctuation and membership
+results. Both releases produce the same digest. A pickle written by 0.2.0 loads after
+upgrade. Non-string forms, bounded messages, string subclasses and explicit `--punct
+--form ascii` show exactly the documented changes. Common CLI output remains identical.
+
+The installed-wheel e2e passes: API, type marker, exports, pickles, errors, console script,
+module invocation, stdin, files, all switches, check reports, invalid UTF-8 and early pipe
+closure. `twine check --strict` passes for both built archives.
+
+Archive names were inspected in this session. Wheel: ten package modules, `py.typed`,
+metadata, entry point and LICENSE. Sdist: source, tests, scripts, docs, manifest and
+LICENSE; no fetched files, report files, bytecode, cache or scratch files. Test sources
+ship in the sdist for reproducibility, never in the wheel.
+
+README states the problem, alternatives and limitations, installation and usage; links
+are absolute, including GUIDE and CHANGELOG. Its certification badge matches the supplied
+reference. Metadata is 1.0.0, Production/Stable, Python >=3.10 with classifiers through
+3.14, MIT, project URLs and keywords, and no runtime dependencies.
+
+## Supported interpreters (item 10)
+
+Local interpreter discovery and the installed-wheel suite are in progress. CPython 3.14.6
+runs the gates. Stale launcher registrations are not counted as available interpreters.
+Earlier work ran 3.10.19, 3.11.5, 3.12.12, 3.13.2, 3.14.2 and 3.14.2t at 2bd07b5.
 
 ## Gates (item 15)
 
-At 01694d2 (round 8 fix) on this PC (CPython 3.13.2) from a fresh clone, each command on its
-own, with the fetched Unicode data, the oracle packages and `UNIDASH_E2E=1` (so the wheel e2e,
-CLI by subprocess included, runs): `ruff format --check .`, `ruff check .`, `mypy --strict src`,
-`mypy --strict src tests` and `pytest` (331 passed, 1 skipped: the POSIX file name test,
-which cannot run on Windows) all exit 0; `pytest` without `UNIDASH_E2E` too. 31abecc, daaba06,
-6b7d5b6 and 01694d2 change only the GUIDE and the tests, so the interpreter matrix and the
-mutation tables stay those of 2bd07b5. The commit that records these runs changes only this
-report and CERT-1.0-QA.md, and `pytest` was run again on it before pushing. Earlier runs:
-6b7d5b6 (314 passed), daaba06 (312 passed), 31abecc (306 passed), 2bd07b5 (295 passed),
-6b342cc (281 passed), d9dc54f (247 passed), 29b10bb and 04fe387.
+On CPython 3.14.6, each command exits 0 independently: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, `mypy --strict src tests`, and `pytest`.
+The source-tree suite passes 320 tests with 12 skips (optional fetched files, opt-in e2e
+and platform-specific cases); the real installed-wheel upgrade test passes separately.
+The fetched-source and installed-wheel suite results will be recorded after completion.
 
-## QA lenses (item 19) and independent review (item 16)
+## Mutation round (item 18)
 
-Rounds 1 to 7 (on bbd84b8, 92a59e7, 6fa3a04, 46ebbae, ef69a71, 2ab1f9e and 99eaeae): every
-lens but b in round 2 returned findings; all were fixed, each behaviour bug with a contract
-test that failed first, and none was disputed. The tables are in CERT-1.0-QA.md (not shipped).
+On 2026-11-02, twelve mutations were applied one at a time to a scratch copy. The API,
+tools, dash, punctuation and CLI contract tests ran with `-x` and bytecode disabled.
+Every mutant returned pytest exit 1 with an assertion failure. Baseline and restored
+source passed the same selection. No mutant survived. The additional round is below;
+earlier rounds (37, 15, 14 and 6 killed mutants) remain in CERT-1.0-MUTATIONS.md.
 
-Round 8, on 3b85a49: lenses a and b confirmed the round 7 fix (`<div>` and `<p>` lines, the
-code line that starts a block, 20 render tests passing) and lens b found 7 of its 10 new
-probes in line with the GUIDE. Two more gaps in the GUIDE block rules, fixed in 01694d2; no
-library code changed, so the CHANGELOG has nothing to add.
-
-| Finding | Fix | Proof |
+| ID | Mutation | First failing contract |
 | --- | --- | --- |
-| a-N5, b-I1 (low, medium): markdown-it-py takes the next lines into the HTML block only for HTML that ends at a blank line (CommonMark types 6 and 7, such as `<div>`, `<p>`, `<hr>`); a comment and a `<pre>`, `<script>`, `<style>` or `<textarea>` element end on their closing line, so there both converters start a new block on the next line | GUIDE: after a line of only HTML, both start a new block if it closes a comment, a `<pre>`, `<script>`, `<style>` or `<textarea>` element, a `<?` instruction, a `<!DOCTYPE` or a CDATA section; only Python-Markdown does after block-level HTML that closes what it opens (`<div>x</div>`, `<hr>`). Found while checking the fix: under a tag left open (`<div>`) both take the next lines into the HTML block, and `<!ELEMENT` or text after the closing tag behave otherwise in Python-Markdown, so the GUIDE names only the cases checked | new `tests/test_markdown_html.py` (the raw HTML test moved there so both files stay under 200 lines): thirteen such blocks, on one line and over several, each over an en dash, an em dash, `Title` and an en dash, and an indented line, the same full render in both converters; `<hr>`, `<hr />`, `<section>` and a nested `<div>` added to the markdown-it-py raw case; `<div>`, `<p>` and `<div>x` left open |
-| a-N6 (low): in markdown-it-py dashes indented to the text of a list item belong to the item, so `- item` over two spaces and an em dash gives `<h2>item</h2>` inside the item, not the list and `<hr />` | GUIDE: the list and quote heading sentence holds for dashes at the start of the line; markdown-it-py puts dashes indented to the item text in the item (touching ones make its text an `<h2>`, others that fold to three hyphens or more an `<hr />`, both inside the item); Python-Markdown applies the thematic break rule to dashes indented one to three spaces under an item or a quote | `tests/test_markdown_blocks.py`: `- item` over two, three and five spaces and a lone en dash, an em dash, two en dashes or an en and an em dash; `1. item` over three spaces and an em dash; two spaced en dashes inside the item; one space (less than the item text); in Python-Markdown, one to three spaces under `- item` and `> q`, with the quote case through both converters |
+| N01 | quote bound widened | `test_contract_api.py::test_messages_quote_at_most_forty_characters[41]` |
+| N02 | str override honored | `test_contract_api.py::test_str_subclasses_are_read_as_their_characters` |
+| N03 | script switch inverted | `test_tools.py::test_find_follows_the_fold_options` |
+| N04 | soft hyphen switch inverted | `test_contract_api.py::test_str_subclasses_are_read_as_their_characters` |
+| N05 | typographic script target wrong | `test_dashes.py::test_typographic_script_hyphens_become_the_unicode_hyphen` |
+| N06 | TeX width off by one | `test_contract_api.py::test_str_subclasses_are_read_as_their_characters` |
+| N07 | leading BOM occupies a column | `test_tools.py::test_a_leading_bom_takes_no_column` |
+| N08 | column starts at zero | `test_tools.py::test_find_reports_line_column_and_name` |
+| N09 | ellipsis loses two stops | `test_fold.py::test_ellipsis_char_becomes_three_dots` |
+| N10 | bullet becomes hyphen | `test_fold.py::test_bullet_becomes_asterisk` |
+| N11 | check exits success on changes | `test_cli.py::test_check_lists_each_change_and_exits_one` |
+| N12 | unreadable input exits success | `test_cli.py::test_missing_file_is_an_error_but_others_still_run` |
 
-To keep the GUIDE at 200 lines the Threads paragraph became a bullet of the stability promise
-and the `DashHit` pickle sentence joined the named tuple line; their content is unchanged. The
-new sentences were checked against more renders than the tests pin: `- item`, `* item`,
-`1. item` and `> q` over zero to six spaces and four dash lines, and over 25 kinds of HTML
-line over an en dash and an em dash, most also over `Title` and an en dash.
+## Independent QA and review (items 16, 19)
 
-Disputed findings: none. Next: the five lenses on the round 8 code, then the independent review.
+The eight earlier QA rounds and their fixes are preserved in CERT-1.0-QA.md. They did
+not finish with five passing lenses. The round-2 lens b PASS predates later code changes
+and subsequent findings, so it is not a current approval. No independent reviewer has
+passed the final commit. These checks remain for the next stage.
+
+## Release status (item 17)
+
+PR #3 targets main from release/1.0.0. Merge and publication remain pending.
