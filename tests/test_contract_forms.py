@@ -15,6 +15,13 @@ from unidash import dash_table, find_dashes, fold_dashes, iter_fold_dashes
 
 ROOT = Path(__file__).resolve().parents[1]
 FORMS = ("ascii", "tex", "typographic")
+NUL_FORMS = [
+    pytest.param(value, id=f"nul-{form}-{position}")
+    for form in FORMS
+    for position, value in enumerate(
+        (f"\x00{form}", f"{form[:1]}\x00{form[1:]}", f"{form}\x00", f"{form}\x00ignored")
+    )
+]
 INVALID_FORMS = (
     [
         pytest.param(value, id=f"padded-{form}-{index}")
@@ -47,7 +54,7 @@ INVALID_FORMS = (
 )
 
 
-@pytest.mark.parametrize("form", INVALID_FORMS)
+@pytest.mark.parametrize("form", INVALID_FORMS + NUL_FORMS)
 @pytest.mark.parametrize("function", [fold_dashes, iter_fold_dashes, find_dashes, dash_table])
 def test_every_api_rejects_nonexact_forms(function: Callable[..., Any], form: str) -> None:
     # Iterator-returning APIs must reject options at the call, before any iteration.
@@ -60,9 +67,18 @@ def test_every_api_rejects_nonexact_forms(function: Callable[..., Any], form: st
             function("x\u2014", form=form)
 
 
-@pytest.mark.parametrize("form", [form.encode("ascii") for form in FORMS])
+@pytest.mark.parametrize(
+    "form",
+    [
+        pytest.param(kind(form, "ascii"), id=f"{kind.__name__}-{form}")
+        for kind in (bytes, bytearray)
+        for form in FORMS
+    ],
+)
 @pytest.mark.parametrize("function", [fold_dashes, iter_fold_dashes, find_dashes, dash_table])
-def test_every_api_rejects_bytes_forms(function: Callable[..., Any], form: bytes) -> None:
+def test_every_api_rejects_bytes_forms(
+    function: Callable[..., Any], form: bytes | bytearray
+) -> None:
     # Do not consume returned iterators: the type check must happen at call time.
     with pytest.raises(TypeError, match=r"^form must be a str$"):
         if function is dash_table:

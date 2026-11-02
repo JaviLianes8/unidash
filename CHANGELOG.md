@@ -45,6 +45,8 @@ moves a character that is already classified.
 
 ### Fixed
 
+- Contracts now reject bytearray forms and NUL-containing form strings at call time
+  across all four form-taking APIs, including installed-wheel checks; behavior is unchanged.
 - Contracts now reject non-ASCII additions to form names across all four form-taking APIs
   and CLI filter/check modes, and bytes forms at call time across all four APIs. The
   installed-wheel checks cover both cases; behavior is unchanged.

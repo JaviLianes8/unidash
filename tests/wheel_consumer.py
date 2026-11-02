@@ -37,9 +37,16 @@ nonascii_forms = [
     for addition in ("\u200b", "\u00e9", "\u0301", "\U0001f600")
     for position in (0, 1, len(form))
 ]
+nul_forms = [
+    value
+    for form in ("ascii", "tex", "typographic")
+    for value in (
+        f"\x00{form}", f"{form[:1]}\x00{form[1:]}", f"{form}\x00", f"{form}\x00ignored",
+    )
+]
 for bad in (
     " ascii", "tex ", " typographic ", "\ttex\n", "as", "te", "typo", "",
-    *compatibility_forms, *nonascii_forms,
+    *compatibility_forms, *nonascii_forms, *nul_forms,
 ):
     for function, args in (
         (u.fold_dashes, (em,)), (u.iter_fold_dashes, ([em],)),
@@ -51,7 +58,10 @@ for bad in (
             assert str(caught) == "form must be one of ascii, tex, typographic"
         else:
             raise AssertionError((function.__name__, bad))
-for bad_bytes in (b"ascii", b"tex", b"typographic"):
+for bad_bytes in (
+    b"ascii", b"tex", b"typographic",
+    bytearray(b"ascii"), bytearray(b"tex"), bytearray(b"typographic"),
+):
     for function, args in (
         (u.fold_dashes, (em,)), (u.iter_fold_dashes, ([em],)),
         (u.find_dashes, (em,)), (u.dash_table, ()),

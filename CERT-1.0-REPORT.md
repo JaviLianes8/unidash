@@ -44,11 +44,10 @@ License v3. Third-party contents remain outside the repository and distribution 
 Tests derive membership, names, compatibility decompositions and confusable targets
 from those fetched files. Hand-written and random boundary inputs are separate contracts.
 
-Independent reference programs pinned in `requirements-oracles.txt` run in this session:
-regex 2026.9.29 scans all code points for Dash and Pd; Markdown 3.11.2, markdown-it-py 4.2.0,
-docutils 0.23 and smartypants 2.0.2 check TeX conventions on seeded texts. Full render tests
-pin the documented Markdown block exceptions. Prior source/reference evidence and its
-limitations remain recorded in the earlier commits and CERT-1.0-QA.md.
+Reference programs in requirements-oracles.txt ran: regex 2026.9.29 scans all code
+points for Dash/Pd; Markdown 3.11.2, markdown-it-py 4.2.0, docutils 0.23 and smartypants
+2.0.2 check seeded TeX conventions and Markdown block exceptions. Earlier evidence
+and limitations remain in CERT-1.0-QA.md.
 
 ## Fuzz and robustness (item 9)
 
@@ -102,31 +101,23 @@ tests extracted from the sdist with its `src` removed, and the fetched Unicode d
 | 3.13.2 (embedded), 3.13.18 | 320 passed, 3 skipped each | 9 passed each |
 | 3.14.6, 3.14.10, 3.14.10 free-threaded | 320 passed, 3 skipped each | 9 passed each |
 
-Skips: the opt-in build test (run separately), POSIX byte filenames, and a readable
-210-character filename whose full temporary path this Windows configuration refuses.
-Embedded builds omit `venv`; moving that import inside the opt-in build test fixed test
-collection, and all four embedded suites then passed. No library change was needed.
-Deleted launcher entries cannot run; the table covers every available build found.
+Skips: opt-in build, POSIX byte filenames and Windows long paths. Embedded builds
+passed with the venv import inside the opt-in test; deleted launcher entries were excluded.
 
 ## Gates (item 15)
 
-On CPython 3.14.6, each final command exits 0 independently: `ruff format --check .`,
-`ruff check .`, `mypy --strict src`, `mypy --strict src tests`, and `pytest`.
-The final source-tree suite includes fetched sources, all reference programs,
-`UNIDASH_E2E=1` and `UNIDASH_E2E_PYPI=1`: **330 passed, 2 skipped** in 116.37 seconds.
-The skips are POSIX byte filenames and the Windows long-path case described above.
-The final wheel and sdist both pass `twine check --strict`. Without optional fetched
-files and build tests, the earlier source-tree run passed 320 tests with 12 skips.
-The installed suite with fetched sources passes 320 tests plus nine doctests on every
-available build above. All preparation items (1 to 15 and 18) are complete.
+The initial CPython 3.14.6 gates passed: format, lint, strict src/tests typing and
+pytest. With fetched Unicode sources, reference programs, wheel and PyPI upgrade:
+**330 passed, 2 skipped** (116.37 s). Skips were POSIX filenames and Windows long paths.
+Both archives passed `twine check --strict`. Without optional data/build checks:
+320 passed, 12 skipped. Installed suites passed on all builds listed above.
+Later QA gate results are recorded with each round below.
 
 ## Mutation round (item 18)
 
-On 2026-11-02, twelve mutations were applied one at a time to a scratch copy. The API,
-tools, dash, punctuation and CLI contract tests ran with `-x` and bytecode disabled.
-Every mutant returned pytest exit 1 with an assertion failure. Baseline and restored
-source passed the same selection (149 passed, one POSIX filename skip). No mutant survived. The additional round is below;
-earlier rounds (37, 15, 14 and 6 killed mutants) remain in CERT-1.0-MUTATIONS.md.
+Twelve mutations applied separately to a scratch copy on 2026-11-02 all failed
+contracts with pytest exit 1. Baseline/restored: 149 passed, one POSIX skip.
+Earlier rounds (37, 15, 14 and 6 killed mutants) remain in CERT-1.0-MUTATIONS.md.
 
 | ID | Mutation | First failing contract |
 | --- | --- | --- |
@@ -145,10 +136,8 @@ earlier rounds (37, 15, 14 and 6 killed mutants) remain in CERT-1.0-MUTATIONS.md
 
 ## Independent QA and review (items 16, 19)
 
-The eight earlier QA rounds and their fixes are preserved in CERT-1.0-QA.md. They did
-not finish with five passing lenses. The round-2 lens b PASS predates later code changes
-and subsequent findings, so it is not a current approval. No independent reviewer has
-passed the final commit. These checks remain for the next stage.
+Earlier QA evidence is in CERT-1.0-QA.md. Five current lens approvals and an
+independent reviewer PASS remain pending; earlier approvals predate later findings.
 
 ### QA lenses, rounds 1 to 3 fixes (2026-11-02)
 
@@ -176,23 +165,35 @@ All evidence paths above are under `C:/lianes8-build/codex-pylib/scratch/unidash
 
 ### QA lenses, round 4 fixes (2026-11-02)
 
-Base: `2860f11e886ea81d1e61fadbdaaa62edc8d2a135`.
-Fix commit: this commit, `test rejection of non-ascii and bytes forms`.
-E-09 adds 36 invalid forms: each valid name with a zero-width space, accented letter,
-combining mark or astral character at its start, middle or end. All four APIs must raise
-ValueError immediately; CLI filter/check modes must exit 2 with empty stdout and the
-allowed-form diagnostic. E-10 requires TypeError at call time for all three bytes
-spellings across all four APIs. Installed-wheel checks cover both findings, including
-both CLI modes for E-09. The wheel API consumer is split out to keep files below 200 lines.
-Production code, API and behavior are unchanged; CHANGELOG records the coverage fixes.
-Neither finding is disputed; independent re-verification remains pending.
-Lossy ASCII normalization fails 216 new cases; bytes decoding fails all 12 new cases.
-Both separately built mutated wheels fail their external consumers. Baseline and
-restored source pass 456 focused cases; all mutations are restored in the scratch copy.
-Final format, lint, strict src/tests typing and pytest gates exit 0. With wheel and
-PyPI upgrade enabled: **807 passed, 11 skipped** in 387.19 s. Skips: nine absent Unicode
-fixtures and two platform/path cases. Tests use timeout 300 s and scratch basetemps.
+Fix commit: `c10b6824da1e6f0cf1e5cfd60c82c8d91e5f2e70`.
+E-09 covers 36 form spellings with non-ASCII additions across all four APIs and both
+CLI modes. E-10 covers immediate TypeError for three bytes spellings across all APIs.
+The installed-wheel consumer covers both. Production behavior is unchanged; neither
+finding is disputed. The round-5 lens e re-check confirmed both fixes.
+Lossy ASCII normalization fails 216 cases; bytes decoding fails 12. Both mutated
+wheels fail their consumers; restored source passes 456 focused cases. All gates,
+strict test typing, wheel and PyPI upgrade pass: **807 passed, 11 skipped** (387.19 s).
+Skips: nine absent Unicode fixtures and two platform/path cases. Timeout: 300 s.
 Evidence: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r4/`.
+
+### QA lenses, round 5 fixes (2026-11-03)
+
+Base: `c10b6824da1e6f0cf1e5cfd60c82c8d91e5f2e70`.
+Fix commit: this commit, `test rejection of bytearray and nul forms`.
+E-11 covers immediate TypeError for all three valid form names as bytearrays.
+E-12 covers immediate ValueError for all three forms with NUL at the start, middle
+or end, including a suffix after NUL. Both cover all four APIs without consuming
+iterators and the installed-wheel consumer. NUL is excluded from subprocess argv.
+Production behavior is unchanged; CHANGELOG records the coverage fixes. Neither
+finding is disputed; independent re-verification remains pending.
+Baseline/restored source passes 368 API cases. Bytearray coercion fails 12 new cases;
+NUL truncation fails 24 (trailing NUL, with/without suffix). Both mutated wheels fail
+their external consumers. Scratch mutations are restored.
+Final format, lint, strict src/tests typing and pytest pass: **867 passed, 11 skipped**
+with wheel and PyPI upgrade (182.67 s). Skips: nine missing fixtures, two platform/path.
+Initial run: report length and one timing ratio failed; report condensed, serial rerun passed.
+Per-test timeout: 300 s; basetemps and evidence remain in scratch.
+Evidence: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r5/`.
 
 ## Release status (item 17)
 
