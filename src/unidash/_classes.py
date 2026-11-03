@@ -28,7 +28,8 @@ GENERAL: dict[int, tuple[str, str]] = {
     0xFE58: ("-", "SMALL EM DASH"),
     0xFE63: ("-", "SMALL HYPHEN-MINUS"),
     0xFF0D: ("-", "FULLWIDTH HYPHEN-MINUS"),
-    # Wavy dashes read as a tilde in ASCII; UTS #39 lists them as confusable with it too.
+    # Wavy dashes read as a tilde in ASCII. UTS #39 lists the swung dash and the wave dash
+    # as confusable with it (it has no entry for the wavy dash).
     0x2053: ("~", "SWUNG DASH"),
     0x301C: ("~", "WAVE DASH"),
     0x3030: ("~", "WAVY DASH"),

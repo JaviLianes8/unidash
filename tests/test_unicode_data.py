@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from unidash import DASHES, fold_dashes
-from unidash._classes import GENERAL, KEPT, NAMES, SCRIPT_HYPHENS, SOFT_HYPHEN
+from unidash._classes import COMPATIBILITY, GENERAL, KEPT, NAMES, SCRIPT_HYPHENS, SOFT_HYPHEN
 
 FOLDER = Path(__file__).resolve().parent / "vectors" / "unicode"
 
@@ -103,9 +103,9 @@ def test_every_confusable_of_hyphen_minus_folds_or_is_excluded() -> None:
     sources = {cp for cp, target in _confusables().items() if target == "-"}
     assert len(sources) >= 10
     left = {cp for cp in sources if fold_dashes(chr(cp)) != "-"}
-    letters = {cp for cp in left if data[cp][1][0] in "LM"}
-    assert letters
-    assert left - letters == set(NOT_DASHES)
+    letters_and_marks = {cp for cp in left if data[cp][1][0] in "LM"}
+    assert {0x1BF3, 0xAA7D} <= letters_and_marks  # spacing marks, named in the GUIDE
+    assert left - letters_and_marks == set(NOT_DASHES)
 
 
 def test_ascii_targets_agree_with_the_confusables() -> None:
@@ -120,3 +120,24 @@ def test_the_wave_and_swung_dashes_are_tilde_confusables() -> None:
     targets = _confusables()
     assert targets[0x301C] == "~"
     assert targets[0x2053] == "~"
+
+
+def _decompositions() -> dict[int, str]:
+    found: dict[int, str] = {}
+    for line in _lines("UnicodeData.txt"):
+        fields = line.split(";")
+        if fields[5]:
+            found[int(fields[0], 16)] = fields[5]
+    return found
+
+
+def test_typographic_targets_are_the_compatibility_mappings_of_the_data() -> None:
+    mappings = _decompositions()
+    tagged = {cp: mappings[cp] for cp in GENERAL if cp in mappings}
+    # U+2011 maps to U+2010 with a <noBreak> tag; its no-break promise is kept on purpose.
+    assert tagged.pop(0x2011) == "<noBreak> 2010"
+    assert set(tagged) == set(COMPATIBILITY)
+    for codepoint, mapping in tagged.items():
+        tag, target = mapping.split()
+        assert tag in {"<small>", "<vertical>", "<wide>"}, hex(codepoint)
+        assert COMPATIBILITY[codepoint] == chr(int(target, 16)), hex(codepoint)

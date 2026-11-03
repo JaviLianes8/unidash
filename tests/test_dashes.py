@@ -110,20 +110,20 @@ def test_empty_text_stays_empty() -> None:
 
 
 def test_text_must_be_a_str() -> None:
-    with pytest.raises(TypeError, match="text must be a str, not bytes"):
+    with pytest.raises(TypeError, match="text must be a str"):
         fold_dashes(b"a")  # type: ignore[arg-type]
 
 
 def test_unknown_form_is_rejected() -> None:
     with pytest.raises(ValueError, match="form must be one of ascii, tex, typographic"):
         fold_dashes("a", "latex")  # type: ignore[arg-type]
-    with pytest.raises(ValueError, match="form"):
+    with pytest.raises(TypeError, match="form must be a str"):
         fold_dashes("a", ["ascii"])  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("option", ["script_hyphens", "keep_soft_hyphens"])
 def test_flags_must_be_bools(option: str) -> None:
-    with pytest.raises(TypeError, match=f"{option} must be a bool, not int"):
+    with pytest.raises(TypeError, match=f"{option} must be a bool"):
         fold_dashes("a", **{option: 1})  # type: ignore[arg-type]
 
 

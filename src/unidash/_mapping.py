@@ -7,7 +7,7 @@ and never transliterates. Dashes come from the ``ascii`` dash form, so both func
 
 from __future__ import annotations
 
-from ._tables import dash_table
+from ._tables import cached_table
 
 _SINGLE_QUOTES = (0x2018, 0x2019, 0x201A, 0x201B, 0x2032, 0x2035)
 _DOUBLE_QUOTES = (0x201C, 0x201D, 0x201E, 0x201F, 0x2033, 0x2036)
@@ -31,7 +31,7 @@ _GROUPS: tuple[tuple[tuple[int, ...], str], ...] = (
 
 
 def _build_table() -> dict[int, str | None]:
-    table = dash_table("ascii")
+    table = dict(cached_table("ascii", False, False))
     for codepoints, replacement in _GROUPS:
         for codepoint in codepoints:
             table[codepoint] = replacement

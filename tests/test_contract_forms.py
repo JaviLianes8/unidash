@@ -1,0 +1,111 @@
+"""Hand-written exact-form contracts for every form-taking API and the CLI."""
+
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from unidash import dash_table, find_dashes, fold_dashes, iter_fold_dashes
+
+ROOT = Path(__file__).resolve().parents[1]
+FORMS = ("ascii", "tex", "typographic")
+NUL_FORMS = [
+    pytest.param(value, id=f"nul-{form}-{position}")
+    for form in FORMS
+    for position, value in enumerate(
+        (f"\x00{form}", f"{form[:1]}\x00{form[1:]}", f"{form}\x00", f"{form}\x00ignored")
+    )
+]
+INVALID_FORMS = (
+    [
+        pytest.param(value, id=f"padded-{form}-{index}")
+        for form in FORMS
+        for index, value in enumerate((f" {form}", f"{form} ", f" {form} ", f"\t{form}\n"))
+    ]
+    + [
+        pytest.param(value, id=f"newline-{form}-{side}-{ord(end[0]):x}{len(end)}")
+        for form in FORMS
+        for end in ("\n", "\r\n", "\r")
+        for side, value in (("leading", end + form), ("trailing", form + end))
+    ]
+    + [
+        pytest.param(form[:length], id=f"prefix-{form[:length]}")
+        for form in FORMS
+        for length in range(1, len(form))
+    ]
+    + [pytest.param("", id="empty")]
+    + [
+        pytest.param(
+            "".join(chr(start + ord(char) - ord("a")) for char in form),
+            id=f"compatibility-{style}-{form}",
+        )
+        for style, start in (("fullwidth", 0xFF41), ("circled", 0x24D0), ("bold", 0x1D41A))
+        for form in FORMS
+    ]
+    + [
+        pytest.param(
+            form[:position] + addition + form[position:],
+            id=f"nonascii-{form}-{ord(addition):04x}-{position}",
+        )
+        for form in FORMS
+        for addition in ("\u200b", "\u00e9", "\u0301", "\U0001f600")
+        for position in (0, 1, len(form))
+    ]
+)
+
+
+@pytest.mark.parametrize("form", INVALID_FORMS + NUL_FORMS)
+@pytest.mark.parametrize("function", [fold_dashes, iter_fold_dashes, find_dashes, dash_table])
+def test_every_api_rejects_nonexact_forms(function: Callable[..., Any], form: str) -> None:
+    # Iterator-returning APIs must reject options at the call, before any iteration.
+    with pytest.raises(ValueError, match=r"^form must be one of ascii, tex, typographic$"):
+        if function is dash_table:
+            function(form=form)
+        elif function is iter_fold_dashes:
+            function(["x\u2014"], form=form)
+        else:
+            function("x\u2014", form=form)
+
+
+@pytest.mark.parametrize(
+    "form",
+    [
+        pytest.param(kind(form, "ascii"), id=f"{kind.__name__}-{form}")
+        for kind in (bytes, bytearray)
+        for form in FORMS
+    ],
+)
+@pytest.mark.parametrize("function", [fold_dashes, iter_fold_dashes, find_dashes, dash_table])
+def test_every_api_rejects_bytes_forms(
+    function: Callable[..., Any], form: bytes | bytearray
+) -> None:
+    # Do not consume returned iterators: the type check must happen at call time.
+    with pytest.raises(TypeError, match=r"^form must be a str$"):
+        if function is dash_table:
+            function(form=form)
+        elif function is iter_fold_dashes:
+            function(["x\u2014"], form=form)
+        else:
+            function("x\u2014", form=form)
+
+
+@pytest.mark.parametrize("form", INVALID_FORMS)
+@pytest.mark.parametrize("check", [False, True])
+def test_cli_rejects_nonexact_forms(form: str, check: bool, tmp_path: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "unidash", *(["--check"] if check else []), "--form", form],
+        input="x\u2014".encode(),
+        capture_output=True,
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+        timeout=300,
+    )
+    assert result.returncode == 2
+    assert result.stdout == b""
+    assert b"form must be one of ascii, tex, typographic" in result.stderr
