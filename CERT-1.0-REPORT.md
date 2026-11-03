@@ -139,42 +139,7 @@ Earlier rounds (37, 15, 14 and 6 killed mutants) remain in CERT-1.0-MUTATIONS.md
 Earlier QA evidence is in CERT-1.0-QA.md. Five current lens approvals and an
 independent reviewer PASS remain pending; earlier approvals predate later findings.
 
-### QA lenses, rounds 1 to 3 fixes (2026-11-02)
-
-Round 1 commit: `974e3d78a80ab202b3b455be5a0dcc80975c3e2f`.
-B-001 documents Markdown HTML boundaries; C-01/C-02 bound diagnostics; E-01 to E-04 cover
-hostile string conversion, empty chunks, lazy hits and repeated filenames. All seven
-were fixed without signature, default or exception-type changes. Contracts first failed
-24 cases; fixes passed 74 focused cases. M16/M19/M20/M35 were killed. All gates, strict test
-typing, wheel and upgrade passed: **351 passed, 11 skipped**. Evidence: `fix-r1/`.
-
-Round 2 commit: `2ed264fbb95ea9f04c6098ddb376f080d45c13ad`.
-E-05/E-06/E-07 add rejection contracts for padded, proper-prefix and empty forms across
-all four APIs and both CLI modes, including installed-wheel checks. Behavior unchanged;
-none disputed. N10/N11/N12 failed 72/96/6 cases; restored source passed all 174 cases.
-All gates, strict test typing, wheel and upgrade passed: **481 passed, 55 skipped**.
-The round-3 lens e re-check confirmed all three fixes. Evidence: `fix-r2/`.
-
-Round 3 commit: `2860f11e886ea81d1e61fadbdaaa62edc8d2a135`.
-E-08 adds fullwidth, circled and mathematical-bold form rejection across all four APIs,
-both CLI modes and installed-wheel checks. Behavior unchanged; none disputed.
-Baseline/restored source passed 228 cases; NFKC normalization failed all 54 new cases
-and its installed-wheel consumer. All gates, strict test typing, wheel and upgrade
-passed: **535 passed, 55 skipped**. The round-4 lens e confirmed E-08. Evidence: `fix-r3/`.
-All evidence paths above are under `C:/lianes8-build/codex-pylib/scratch/unidash-cert/`.
-
-### QA lenses, round 4 fixes (2026-11-02)
-
-Fix commit: `c10b6824da1e6f0cf1e5cfd60c82c8d91e5f2e70`.
-E-09 covers 36 form spellings with non-ASCII additions across all four APIs and both
-CLI modes. E-10 covers immediate TypeError for three bytes spellings across all APIs.
-The installed-wheel consumer covers both. Production behavior is unchanged; neither
-finding is disputed. The round-5 lens e re-check confirmed both fixes.
-Lossy ASCII normalization fails 216 cases; bytes decoding fails 12. Both mutated
-wheels fail their consumers; restored source passes 456 focused cases. All gates,
-strict test typing, wheel and PyPI upgrade pass: **807 passed, 11 skipped** (387.19 s).
-Skips: nine absent Unicode fixtures and two platform/path cases. Timeout: 300 s.
-Evidence: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r4/`.
+Fixes of QA lens rounds 1 to 4 are in CERT-1.0-QA.md.
 
 ### QA lenses, round 5 fixes (2026-11-03)
 
@@ -194,6 +159,39 @@ with wheel and PyPI upgrade (182.67 s). Skips: nine missing fixtures, two platfo
 Initial run: report length and one timing ratio failed; report condensed, serial rerun passed.
 Per-test timeout: 300 s; basetemps and evidence remain in scratch.
 Evidence: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r5/`.
+
+### QA lenses, round 6 fixes (2026-11-03)
+
+Base `ec7a43c535a8bb4aa3785055d82a5051628747c0`; fix commit
+`925ab7cb135113357e2eaba79d83372adef3e8f4`. Lens e mutants surviving in `check_form`: E-13
+memoryview forms decoded as ASCII, E-14 trailing CR/LF stripped, E-15 VT, FF, U+001C to
+U+001F, U+0085 and U+00A0 stripped. All are contract gaps; behavior is unchanged.
+Disputed findings: none. The round closes the whole class, not just three spellings:
+- `test_contract_forms.py`: only-leading and only-trailing `\n`, `\r\n` and `\r` forms join
+  `INVALID_FORMS` for the four APIs and both CLI subprocess modes (108 new cases).
+- `test_contract_form_class.py` (new): 30,727 str spellings get the exact `ValueError` from
+  the four APIs (iterators not consumed) and the CLI in process: each form with any of 2,252
+  characters (every `str.isspace()` one and categories Cc, Cf, Mn, Me, Zs, Zl, Zp), ASCII
+  punctuation or `\r\n` before, after, around and inside it; every case mix, substrings,
+  deletions, swaps, substitutions, additions, Cyrillic and Greek lookalikes, long s, aliases.
+  68 non-str values (memoryview, array, UTF-16/32 bytes, `UserString`, paths, `__str__` and
+  `__fspath__` objects, a non-str enum member, containers, iterators, numbers, None) get the
+  exact `TypeError` at call time.
+- `wheel_consumer.py` checks the padded set, near misses, lookalikes, memoryview, array,
+  path and number forms on the installed wheel; `test_e2e_wheel.py` drives the installed CLI
+  with newline, CR/LF, VT and NBSP padded forms.
+
+On a scratch copy restored after each run, 24 `check_form` mutants (the three survivors,
+strip, collapse, casefold, punctuation, format or combining mark removal, fuzzy, prefix,
+suffix and anagram matching, transliteration, long s, `os.fspath`, `str()`, int index, enum
+value, UTF-16, array, sequence join, None as default) and one CLI-only strip are all killed;
+ten of them, the survivors included, also fail the installed consumer program.
+Gates, Elena's PC, CPython 3.14.2, clean clone of the fix commit: format, lint and
+`mypy --strict src` exit 0; pytest with `UNIDASH_E2E=1` and `UNIDASH_E2E_PYPI=1` (wheel,
+installed consumer and CLI, upgrade from PyPI 0.2.0): **942 passed, 54 skipped** (84.74 s).
+Skips: optional oracle packages, unfetched Unicode fixtures, POSIX names. Strict test typing
+passes on CPython 3.13.2. Timeout 300 s. Lens e re-verification pending.
+Evidence: `D:/pylib-scratch/unidash-cert/fix-r6/`.
 
 ## Release status (item 17)
 

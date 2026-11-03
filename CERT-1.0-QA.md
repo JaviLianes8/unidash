@@ -122,3 +122,42 @@ new sentences were checked against more renders than the tests pin: `- item`, `*
 line over an en dash and an em dash, most also over `Title` and an en dash.
 
 Disputed findings: none. Next: the five lenses on the round 8 code, then the independent review.
+
+## Lens rounds 1 to 4 of the second QA pass
+
+### QA lenses, rounds 1 to 3 fixes (2026-11-02)
+
+Round 1 commit: `974e3d78a80ab202b3b455be5a0dcc80975c3e2f`.
+B-001 documents Markdown HTML boundaries; C-01/C-02 bound diagnostics; E-01 to E-04 cover
+hostile string conversion, empty chunks, lazy hits and repeated filenames. All seven
+were fixed without signature, default or exception-type changes. Contracts first failed
+24 cases; fixes passed 74 focused cases. M16/M19/M20/M35 were killed. All gates, strict test
+typing, wheel and upgrade passed: **351 passed, 11 skipped**. Evidence: `fix-r1/`.
+
+Round 2 commit: `2ed264fbb95ea9f04c6098ddb376f080d45c13ad`.
+E-05/E-06/E-07 add rejection contracts for padded, proper-prefix and empty forms across
+all four APIs and both CLI modes, including installed-wheel checks. Behavior unchanged;
+none disputed. N10/N11/N12 failed 72/96/6 cases; restored source passed all 174 cases.
+All gates, strict test typing, wheel and upgrade passed: **481 passed, 55 skipped**.
+The round-3 lens e re-check confirmed all three fixes. Evidence: `fix-r2/`.
+
+Round 3 commit: `2860f11e886ea81d1e61fadbdaaa62edc8d2a135`.
+E-08 adds fullwidth, circled and mathematical-bold form rejection across all four APIs,
+both CLI modes and installed-wheel checks. Behavior unchanged; none disputed.
+Baseline/restored source passed 228 cases; NFKC normalization failed all 54 new cases
+and its installed-wheel consumer. All gates, strict test typing, wheel and upgrade
+passed: **535 passed, 55 skipped**. The round-4 lens e confirmed E-08. Evidence: `fix-r3/`.
+All evidence paths above are under `C:/lianes8-build/codex-pylib/scratch/unidash-cert/`.
+
+### QA lenses, round 4 fixes (2026-11-02)
+
+Fix commit: `c10b6824da1e6f0cf1e5cfd60c82c8d91e5f2e70`.
+E-09 covers 36 form spellings with non-ASCII additions across all four APIs and both
+CLI modes. E-10 covers immediate TypeError for three bytes spellings across all APIs.
+The installed-wheel consumer covers both. Production behavior is unchanged; neither
+finding is disputed. The round-5 lens e re-check confirmed both fixes.
+Lossy ASCII normalization fails 216 cases; bytes decoding fails 12. Both mutated
+wheels fail their consumers; restored source passes 456 focused cases. All gates,
+strict test typing, wheel and PyPI upgrade pass: **807 passed, 11 skipped** (387.19 s).
+Skips: nine absent Unicode fixtures and two platform/path cases. Timeout: 300 s.
+Evidence: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r4/`.
