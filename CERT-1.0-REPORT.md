@@ -89,29 +89,23 @@ reference. Metadata is 1.0.0, Production/Stable, Python >=3.10 with classifiers 
 
 ## Supported interpreters (item 10)
 
-All eleven distinct available builds passed the installed-wheel suite: 320 tests and
-nine doctests each. Each used a fresh venv or an isolated copy of the embedded runtime,
-tests extracted from the sdist with its `src` removed, and the fetched Unicode data.
+Review round 1 full suite at `5e6d35e`, from source, 300 s timeout, on every CPython on this
+PC (no 3.11 here). Skips: optional oracle/typing packages absent there, POSIX names, long paths.
 
-| CPython build | Suite | Doctests |
-| --- | --- | --- |
-| 3.10.11 (embedded), 3.10.22 | 320 passed, 3 skipped each | 9 passed each |
-| 3.11.9 (embedded), 3.11.18 | 320 passed, 3 skipped each | 9 passed each |
-| 3.12.10 (embedded), 3.12.16 | 320 passed, 3 skipped each | 9 passed each |
-| 3.13.2 (embedded), 3.13.18 | 320 passed, 3 skipped each | 9 passed each |
-| 3.14.6, 3.14.10, 3.14.10 free-threaded | 320 passed, 3 skipped each | 9 passed each |
+| CPython build | Suite |
+| --- | --- |
+| 3.10.19, 3.12.12, 3.14.2 | 996 passed, 2 skipped each |
+| 3.13.2 | 954 passed, 44 skipped |
+| 3.14.2 free-threaded | 921 passed, 66 skipped |
 
-Skips: opt-in build, POSIX byte filenames and Windows long paths. Embedded builds
-passed with the venv import inside the opt-in test; deleted launcher entries were excluded.
+Earlier the installed-wheel suite (320 tests) passed on eleven builds, 3.11 included.
 
 ## Gates (item 15)
 
 The initial CPython 3.14.6 gates passed: format, lint, strict src/tests typing and
 pytest. With fetched Unicode sources, reference programs, wheel and PyPI upgrade:
 **330 passed, 2 skipped** (116.37 s). Skips were POSIX filenames and Windows long paths.
-Both archives passed `twine check --strict`. Without optional data/build checks:
-320 passed, 12 skipped. Installed suites passed on all builds listed above.
-Later QA gate results are recorded with each round below.
+Both archives passed `twine check --strict`. Later gate results are with each round below.
 
 ## Mutation round (item 18)
 
@@ -192,6 +186,14 @@ installed consumer and CLI, upgrade from PyPI 0.2.0): **942 passed, 54 skipped**
 Skips: optional oracle packages, unfetched Unicode fixtures, POSIX names. Strict test typing
 passes on CPython 3.13.2. Timeout 300 s. Lens e re-verification pending.
 Evidence: `D:/pylib-scratch/unidash-cert/fix-r6/`.
+
+### Review round 1 (2026-11-03)
+
+F1: on 3.10, `--form=--` crashed with `TypeError` (exit 1): that argparse drops `--` from an
+attached value, so the form became a list. Any non-str form is now the `--form` usage error,
+exit 2, pinned by a subprocess contract (filter and `--check`) that failed on 3.10 first.
+F2: three evidence paths reworded. Fix `5e6d35e849a6fdc448fa0e231ccd8a73df6570d6`; format,
+lint, `mypy --strict src` exit 0 on 3.13.2 and 3.10.19. Evidence: `fix-review-r1/` in scratch.
 
 ## Release status (item 17)
 
