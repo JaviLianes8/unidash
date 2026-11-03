@@ -1,4 +1,4 @@
-# unidash 1.0.0 QA rounds 1 to 8 (item 19)
+# unidash 1.0.0 QA rounds and review fixes (item 19)
 
 The findings of the first eight QA rounds and how each was fixed; current status is in
 CERT-1.0-REPORT.md.
@@ -161,3 +161,32 @@ wheels fail their consumers; restored source passes 456 focused cases. All gates
 strict test typing, wheel and PyPI upgrade pass: **807 passed, 11 skipped** (387.19 s).
 Skips: nine absent Unicode fixtures and two platform/path cases. Timeout: 300 s.
 Evidence: `unidash-cert/fix-r4/` in the build scratch folder.
+
+### QA lenses, round 5 fixes (2026-11-03)
+
+Base `c10b682`; fix `test rejection of bytearray and nul forms`. E-11: immediate TypeError
+for the three form names as bytearrays; E-12: immediate ValueError for NUL at start, middle
+or end of a form. Both across the four APIs (iterators not consumed) and the installed
+consumer. Behavior unchanged, findings not disputed. Bytearray coercion fails 12 new cases,
+NUL truncation 24. Gates with wheel and PyPI upgrade: **867 passed, 11 skipped**.
+Evidence: `unidash-cert/fix-r5/`.
+
+### QA lenses, round 6 fixes (2026-11-03)
+
+Base `ec7a43c`; fix `925ab7c`. Lens e survivors in `check_form`: E-13 memoryview decoded as
+ASCII, E-14 trailing CR/LF stripped, E-15 VT, FF, U+001C to U+001F, U+0085, U+00A0 stripped.
+Contract gaps only. The fix closes the class: leading and trailing newline forms for the four
+APIs and both CLI modes (108 cases); `test_contract_form_class.py` gives 30,727 str spellings
+(2,252 space, control, format and mark characters around or inside each form, case mixes,
+edits, lookalikes, aliases) the exact ValueError and 68 non-str values the exact TypeError;
+the installed consumer and CLI repeat the padded and lookalike sets. 24 `check_form` mutants
+and one CLI strip are all killed. Clean-clone gates on CPython 3.14.2 with wheel and PyPI
+upgrade: **942 passed, 54 skipped**. Lens e round 7 confirmed. Evidence: `unidash-cert/fix-r6/`.
+
+### Review round 1 fixes (2026-11-03)
+
+F1: on 3.10, `--form=--` crashed with TypeError (exit 1) because that argparse drops `--`
+from an attached value, giving a list. Any non-str form is now the `--form` usage error,
+exit 2, pinned by a subprocess contract (filter and `--check`) that failed on 3.10 first.
+F2: three evidence paths reworded. Fix `5e6d35e`; review round 2 confirmed both.
+Evidence: `unidash-cert/fix-review-r1/`.

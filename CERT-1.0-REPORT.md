@@ -9,7 +9,8 @@ Progress:
 - [x] README, dated changelog, metadata and archive inspection (items 11 to 14)
 - [x] Four gates and strict typing of tests (item 15)
 - [x] Twelve additional mutations, all killed (item 18)
-- [ ] Independent reviewer (item 16), merge and publish (item 17), five QA lenses (item 19)
+- [x] Five QA lenses (item 19) and independent reviewer (item 16)
+- [ ] Merge and publish (item 17)
 
 ## API and contracts (items 1 to 6)
 
@@ -126,74 +127,38 @@ Earlier rounds (37, 15, 14 and 6 killed mutants) remain in CERT-1.0-MUTATIONS.md
 | N09 | ellipsis loses two stops | `test_fold.py::test_ellipsis_char_becomes_three_dots` |
 | N10 | bullet becomes hyphen | `test_fold.py::test_bullet_becomes_asterisk` |
 | N11 | check exits success on changes | `test_cli.py::test_check_lists_each_change_and_exits_one` |
-| N12 | unreadable input exits success | `test_cli.py::test_missing_file_is_an_error_but_others_still_run` |
+| N12 | unreadable input exits success | `test_cli.py::test_missing_file_is_an_error_but_others_still_## Independent QA and review (items 16, 19)
 
-## Independent QA and review (items 16, 19)
+All five lenses passed on their final round. Reports stay in the build scratch folder
+`unidash-cert/`; fixes of every round are in CERT-1.0-QA.md.
 
-Earlier QA evidence is in CERT-1.0-QA.md. Five current lens approvals and an
-independent reviewer PASS remain pending; earlier approvals predate later findings.
+| Lens | Rounds | Final verdict | Report | Commit |
+| --- | --- | --- | --- | --- |
+| a, API and docs | 1 | PASS, no findings | laptop evidence, `lens-a-r1/REPORT.md` | `5da4472` |
+| b, ground truth | 2 | PASS, no findings | laptop evidence, `lens-b-r2/REPORT.md` | `89a252e` |
+| c, adversarial | 2 | PASS, no findings | laptop evidence, `lens-c-r2/REPORT.md` | `89a252e` |
+| d, packaging and e2e | 1 | PASS, no findings | laptop evidence, `lens-d-r1/REPORT.md` | `5da4472` |
+| e, contract strength | 7 | PASS, no findings | build scratch, `lens-e-r7/REPORT.md` | `da63442` |
 
-Fixes of QA lens rounds 1 to 4 are in CERT-1.0-QA.md.
+Independent reviewer: round 1 FAIL on item 10 (`--form=--` on 3.10) and three evidence
+paths, fixed in `5e6d35e` and `8d27cca`. Round 2 PASS at `8d27cca`
+(`review-r2/REPORT.md` in build scratch): suites green on 3.10.19, 3.12.12, 3.13.2 and
+3.14.2, fixtures matching the MANIFEST hashes, four gates exit 0.
 
-### QA lenses, round 5 fixes (2026-11-03)
+| Item | Score | Item | Score |
+| --- | --- | --- | --- |
+| 1 API retained | PASS | 11 README | PASS |
+| 2 contracts | PASS | 12 dated changelog | PASS |
+| 3 examples | PASS | 13 metadata | PASS |
+| 4 typing | PASS | 14 archives | PASS |
+| 5 errors | PASS | 15 gates | PASS |
+| 6 CLI | PASS | 16 independent review | PASS |
+| 7 ground truth | PASS | 17 PR, trace guard | ready; merge pending |
+| 8 wheel and upgrade | PASS | 18 mutations | PASS |
+| 9 fuzz and scale | PASS | 19 five QA lenses | PASS |
+| 10 interpreters | PASS | | |
 
-Base: `c10b6824da1e6f0cf1e5cfd60c82c8d91e5f2e70`.
-Fix commit: this commit, `test rejection of bytearray and nul forms`.
-E-11 covers immediate TypeError for all three valid form names as bytearrays.
-E-12 covers immediate ValueError for all three forms with NUL at the start, middle
-or end, including a suffix after NUL. Both cover all four APIs without consuming
-iterators and the installed-wheel consumer. NUL is excluded from subprocess argv.
-Production behavior is unchanged; CHANGELOG records the coverage fixes. Neither
-finding is disputed; independent re-verification remains pending.
-Baseline/restored source passes 368 API cases. Bytearray coercion fails 12 new cases;
-NUL truncation fails 24 (trailing NUL, with/without suffix). Both mutated wheels fail
-their external consumers. Scratch mutations are restored.
-Final format, lint, strict src/tests typing and pytest pass: **867 passed, 11 skipped**
-with wheel and PyPI upgrade (182.67 s). Skips: nine missing fixtures, two platform/path.
-Initial run: report length and one timing ratio failed; report condensed, serial rerun passed.
-Per-test timeout: 300 s; basetemps and evidence remain in scratch.
-Evidence: `unidash-cert/fix-r5/` in the build scratch folder.
-
-### QA lenses, round 6 fixes (2026-11-03)
-
-Base `ec7a43c535a8bb4aa3785055d82a5051628747c0`; fix commit
-`925ab7cb135113357e2eaba79d83372adef3e8f4`. Lens e mutants surviving in `check_form`: E-13
-memoryview forms decoded as ASCII, E-14 trailing CR/LF stripped, E-15 VT, FF, U+001C to
-U+001F, U+0085 and U+00A0 stripped. All are contract gaps; behavior is unchanged.
-Disputed findings: none. The round closes the whole class, not just three spellings:
-- `test_contract_forms.py`: only-leading and only-trailing `\n`, `\r\n` and `\r` forms join
-  `INVALID_FORMS` for the four APIs and both CLI subprocess modes (108 new cases).
-- `test_contract_form_class.py` (new): 30,727 str spellings get the exact `ValueError` from
-  the four APIs (iterators not consumed) and the CLI in process: each form with any of 2,252
-  characters (every `str.isspace()` one and categories Cc, Cf, Mn, Me, Zs, Zl, Zp), ASCII
-  punctuation or `\r\n` before, after, around and inside it; every case mix, substrings,
-  deletions, swaps, substitutions, additions, Cyrillic and Greek lookalikes, long s, aliases.
-  68 non-str values (memoryview, array, UTF-16/32 bytes, `UserString`, paths, `__str__` and
-  `__fspath__` objects, a non-str enum member, containers, iterators, numbers, None) get the
-  exact `TypeError` at call time.
-- `wheel_consumer.py` checks the padded set, near misses, lookalikes, memoryview, array,
-  path and number forms on the installed wheel; `test_e2e_wheel.py` drives the installed CLI
-  with newline, CR/LF, VT and NBSP padded forms.
-
-On a scratch copy restored after each run, 24 `check_form` mutants (the three survivors,
-strip, collapse, casefold, punctuation, format or combining mark removal, fuzzy, prefix,
-suffix and anagram matching, transliteration, long s, `os.fspath`, `str()`, int index, enum
-value, UTF-16, array, sequence join, None as default) and one CLI-only strip are all killed;
-ten of them, the survivors included, also fail the installed consumer program.
-Gates, Elena's PC, CPython 3.14.2, clean clone of the fix commit: format, lint and
-`mypy --strict src` exit 0; pytest with `UNIDASH_E2E=1` and `UNIDASH_E2E_PYPI=1` (wheel,
-installed consumer and CLI, upgrade from PyPI 0.2.0): **942 passed, 54 skipped** (84.74 s).
-Skips: optional oracle packages, unfetched Unicode fixtures, POSIX names. Strict test typing
-passes on CPython 3.13.2. Timeout 300 s. Lens e re-verification pending.
-Evidence: `D:/pylib-scratch/unidash-cert/fix-r6/`.
-
-### Review round 1 (2026-11-03)
-
-F1: on 3.10, `--form=--` crashed with `TypeError` (exit 1): that argparse drops `--` from an
-attached value, so the form became a list. Any non-str form is now the `--form` usage error,
-exit 2, pinned by a subprocess contract (filter and `--check`) that failed on 3.10 first.
-F2: three evidence paths reworded. Fix `5e6d35e849a6fdc448fa0e231ccd8a73df6570d6`; format,
-lint, `mypy --strict src` exit 0 on 3.13.2 and 3.10.19. Evidence: `fix-review-r1/` in scratch.
+ratch.
 
 ## Release status (item 17)
 
