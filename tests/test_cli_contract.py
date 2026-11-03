@@ -47,3 +47,14 @@ def test_repeated_files_preserve_multiplicity_and_order(check: bool, tmp_path: P
         else b"a-b-a-"
     )
     assert result.stdout == expected
+
+
+@pytest.mark.parametrize("check", [False, True])
+def test_a_form_of_two_hyphens_is_a_usage_error(check: bool, tmp_path: Path) -> None:
+    # Older argparse strips "--" from an attached value and hands back a list.
+    (tmp_path / "a.txt").write_text("a\u2014", encoding="utf-8")
+    result = _run(["--form=--", *(["--check"] if check else []), "a.txt"], tmp_path)
+    assert result.returncode == 2
+    assert result.stdout == b""
+    assert b"Traceback" not in result.stderr
+    assert b"argument --form: form must be one of ascii, tex, typographic" in result.stderr

@@ -147,7 +147,7 @@ both CLI modes and installed-wheel checks. Behavior unchanged; none disputed.
 Baseline/restored source passed 228 cases; NFKC normalization failed all 54 new cases
 and its installed-wheel consumer. All gates, strict test typing, wheel and upgrade
 passed: **535 passed, 55 skipped**. The round-4 lens e confirmed E-08. Evidence: `fix-r3/`.
-All evidence paths above are under `C:/lianes8-build/codex-pylib/scratch/unidash-cert/`.
+All evidence paths above are under the build scratch folder `unidash-cert/`.
 
 ### QA lenses, round 4 fixes (2026-11-02)
 
@@ -160,4 +160,4 @@ Lossy ASCII normalization fails 216 cases; bytes decoding fails 12. Both mutated
 wheels fail their consumers; restored source passes 456 focused cases. All gates,
 strict test typing, wheel and PyPI upgrade pass: **807 passed, 11 skipped** (387.19 s).
 Skips: nine absent Unicode fixtures and two platform/path cases. Timeout: 300 s.
-Evidence: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r4/`.
+Evidence: `unidash-cert/fix-r4/` in the build scratch folder.

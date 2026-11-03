@@ -45,6 +45,9 @@ moves a character that is already classified.
 
 ### Fixed
 
+- On Python 3.10, `--form=--` crashed the command line with a `TypeError` because that
+  argparse drops `--` from an attached value; it is now the usual `--form` usage error with
+  exit 2, as on later versions.
 - Contracts now reject every normalized spelling of a form across all four form-taking APIs
   and the CLI: forms padded with any whitespace, control, format or combining character
   (leading or trailing newlines included), case variants, substrings, near misses and

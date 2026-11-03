@@ -157,6 +157,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the tool and return its exit code: 0 clean, 1 changes found by --check, 2 error."""
     parser = _parser()
     args = parser.parse_args(argv)
+    if args.form is not None and not isinstance(args.form, str):
+        # Older argparse strips "--" from an attached value (--form=--) and skips the type.
+        parser.error(f"argument --form: form must be one of {', '.join(FORMS)}")
     table = _table(args, parser)
     names = args.files or [_STDIN]
     if names.count(_STDIN) > 1:

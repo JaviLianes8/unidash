@@ -158,7 +158,7 @@ Final format, lint, strict src/tests typing and pytest pass: **867 passed, 11 sk
 with wheel and PyPI upgrade (182.67 s). Skips: nine missing fixtures, two platform/path.
 Initial run: report length and one timing ratio failed; report condensed, serial rerun passed.
 Per-test timeout: 300 s; basetemps and evidence remain in scratch.
-Evidence: `C:/lianes8-build/codex-pylib/scratch/unidash-cert/fix-r5/`.
+Evidence: `unidash-cert/fix-r5/` in the build scratch folder.
 
 ### QA lenses, round 6 fixes (2026-11-03)
 
