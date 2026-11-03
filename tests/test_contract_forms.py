@@ -29,6 +29,12 @@ INVALID_FORMS = (
         for index, value in enumerate((f" {form}", f"{form} ", f" {form} ", f"\t{form}\n"))
     ]
     + [
+        pytest.param(value, id=f"newline-{form}-{side}-{ord(end[0]):x}{len(end)}")
+        for form in FORMS
+        for end in ("\n", "\r\n", "\r")
+        for side, value in (("leading", end + form), ("trailing", form + end))
+    ]
+    + [
         pytest.param(form[:length], id=f"prefix-{form[:length]}")
         for form in FORMS
         for length in range(1, len(form))

@@ -44,9 +44,30 @@ nul_forms = [
         f"\x00{form}", f"{form[:1]}\x00{form[1:]}", f"{form}\x00", f"{form}\x00ignored",
     )
 ]
+import sys, unicodedata
+droppable = [
+    c for c in map(chr, range(sys.maxunicode + 1))
+    if c.isspace() or unicodedata.category(c) in {"Cc", "Cf", "Mn", "Me", "Zs", "Zl", "Zp"}
+]
+assert set("\v\f\x1c\x1d\x1e\x1f\x85\xa0\u2028\u3000") <= set(droppable)
+padded_forms = [
+    value
+    for form in ("ascii", "tex", "typographic")
+    for pad in (*droppable, "\r\n")
+    for value in (pad + form, form + pad, pad + form + pad, form[:1] + pad + form[1:])
+]
+near_forms = [
+    variant
+    for form in ("ascii", "tex", "typographic")
+    for variant in (
+        form.upper(), form.title(), form + "s", "x" + form, form[1:], form[:-1] + "x",
+        form[1] + form[0] + form[2:], form.replace("s", "\u017f"), form.replace("a", "\u0430"),
+    )
+    if variant != form
+]
 for bad in (
-    " ascii", "tex ", " typographic ", "\ttex\n", "as", "te", "typo", "",
-    *compatibility_forms, *nonascii_forms, *nul_forms,
+    " ascii", "tex ", " typographic ", "\ttex\n", "as", "te", "typo", "", "latex", "0",
+    *compatibility_forms, *nonascii_forms, *nul_forms, *padded_forms, *near_forms,
 ):
     for function, args in (
         (u.fold_dashes, (em,)), (u.iter_fold_dashes, ([em],)),
@@ -58,9 +79,20 @@ for bad in (
             assert str(caught) == "form must be one of ascii, tex, typographic"
         else:
             raise AssertionError((function.__name__, bad))
+import array, collections, pathlib
 for bad_bytes in (
-    b"ascii", b"tex", b"typographic",
-    bytearray(b"ascii"), bytearray(b"tex"), bytearray(b"typographic"),
+    *(
+        kind(form)
+        for form in (b"ascii", b"tex", b"typographic")
+        for kind in (
+            bytes, bytearray, memoryview, lambda raw: memoryview(bytearray(raw)),
+            lambda raw: array.array("B", raw), lambda raw: raw.decode().encode("utf-16"),
+            lambda raw: collections.UserString(raw.decode()),
+            lambda raw: pathlib.PurePosixPath(raw.decode()),
+            lambda raw: list(raw.decode()), lambda raw: [raw.decode()],
+        )
+    ),
+    0, 1, 2, True, None,
 ):
     for function, args in (
         (u.fold_dashes, (em,)), (u.iter_fold_dashes, ([em],)),

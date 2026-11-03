@@ -45,6 +45,12 @@ moves a character that is already classified.
 
 ### Fixed
 
+- Contracts now reject every normalized spelling of a form across all four form-taking APIs
+  and the CLI: forms padded with any whitespace, control, format or combining character
+  (leading or trailing newlines included), case variants, substrings, near misses and
+  lookalike letters. Buffers (memoryview, array), path-like, sequence, enum and number
+  values raise `TypeError` at call time. The installed-wheel checks cover both; behavior is
+  unchanged.
 - Contracts now reject bytearray forms and NUL-containing form strings at call time
   across all four form-taking APIs, including installed-wheel checks; behavior is unchanged.
 - Contracts now reject non-ASCII additions to form names across all four form-taking APIs
